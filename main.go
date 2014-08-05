@@ -59,7 +59,7 @@ func LoadJson(r io.Reader, i interface{}) (err error) {
 	return
 }
 
-func judge(sid, memorylimt, timelimt int) {
+func judge(sid, memorylimit, timelimit int) {
 	response, err := http.Post(config.PostHost+"/solution/detail/sid/"+strconv.Itoa(sid), "application/json", nil)
 	if err != nil {
 		log.Println(err)
@@ -74,8 +74,10 @@ func judge(sid, memorylimt, timelimt int) {
 			return
 		}
 	}
-
-	one.SJudge(memorylimt, timelimt)
+	one.SJudge(memorylimit, timelimit, "sample.in", "sample.out")
+	if one.Judge == config.JudgeAC {
+		one.SJudge(memorylimit, timelimit, "test.in", "test.out")
+	}
 
 	action := "submit"
 	if one.Judge == config.JudgeAC {
@@ -137,14 +139,39 @@ func compare(std_out, user_out string) int {
 	}
 }
 
-func (this *solution) SJudge(memorylimit, timelimit int) {
+/*
+一段c程序，获得pid程序的运行内存，示例：m_vmpeak = get_proc_status(pid, "VmPeak:");
+int get_proc_status(int pid, const char * mark)
+{
+    FILE * pf;
+    char fn[BUFFER_SIZE], buf[BUFFER_SIZE];
+    int ret = 0;
+    sprintf(fn, "/proc/%d/status", pid);
+    pf = fopen(fn, "r");
+    int m = strlen(mark);
+    while (pf && fgets(buf, BUFFER_SIZE - 1, pf))
+    {
+
+        buf[strlen(buf) - 1] = 0;
+        if (strncmp(buf, mark, m) == 0)
+        {
+            sscanf(buf + m + 1, "%d", &ret);
+        }
+    }
+    if (pf)
+        fclose(pf);
+    return ret;
+}
+*/
+
+func (this *solution) SJudge(memorylimit, timelimit int, infilename, outfilename string) {
 	log.Println("run solution")
 	this.Judge = config.JudgePD
 	pwd, err := os.Getwd()
-	os.Chdir("H:\\ACM\\" + strconv.Itoa(this.Pid))
+	os.Chdir("/home/data/ACM/" + strconv.Itoa(this.Pid))//be careful.
 	defer os.Chdir(pwd)
 	std_in, std_out_f := os.Stdin, os.Stdout
-	std_in, err = os.Open("test.in")
+	std_in, err = os.Open(infilename)
 	if err != nil {
 		log.Println("Open std_in file failed")
 		return
@@ -153,7 +180,7 @@ func (this *solution) SJudge(memorylimit, timelimit int) {
 
 	//begin read the std_out text
 	var std_out string
-	std_out_f, err = os.Open("test.out")
+	std_out_f, err = os.Open(outfilename)
 	if err != nil {
 		log.Println("open std_out file failed")
 		return
@@ -167,7 +194,7 @@ func (this *solution) SJudge(memorylimit, timelimit int) {
 			} else if err != nil {
 				break
 			}
-			std_out = std_out + string(line) + "\r\n"
+			std_out = std_out + string(line) + "\n"
 		}
 	}
 	defer std_out_f.Close()
@@ -192,17 +219,17 @@ func (this *solution) SJudge(memorylimit, timelimit int) {
 
 	//begin compile source code
 	var out bytes.Buffer
-	cmd := exec.Command("g++", "-o", "Main", "-g", "-Wall", "test.cpp") //compile
+	cmd := exec.Command("g++", "test.cpp", "-o", "Main", "-O2", "-Wall", "-lm", "--static", "-DONLINE_JUDGE") //compile
 	err = cmd.Run()
 	if err != nil {
 		log.Println(err)
 		this.Judge = config.JudgeCE //compiler error
 		return
 	}
-	defer os.Remove("./Main")
+	defer os.Remove("Main")
 	//end compile source code
 
-	target, err := os.Open("./Main") //Memroy of the target
+	target, err := os.Open("Main") //Memroy of the target
 	defer target.Close()
 	t_info, err := target.Stat()
 	if err != nil {
@@ -218,7 +245,6 @@ func (this *solution) SJudge(memorylimit, timelimit int) {
 	channel := make(chan int)
 	//process_id := make(chan int)
 	defer close(channel)
-	log.Println("Here")
 	bcmd := exec.Command("./Main")
 	bcmd.Stdin = std_in
 	bcmd.Stdout = &out
@@ -238,6 +264,7 @@ func (this *solution) SJudge(memorylimit, timelimit int) {
 	select {
 	case res := <-channel:
 		if res == config.JudgeCP {
+			this.Time = bcmd.ProcessState.SystemTime() + bcmd.ProcessState.UserTime()
 			user_out := out.String()
 			this.Judge = compare(std_out, user_out)
 		}
