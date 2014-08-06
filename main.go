@@ -180,7 +180,14 @@ func compare(std_out, user_out string) int {
 func (this *solution) compile() {
 	//begin compile source code
 
-	cmd := exec.Command("g++", "Main.cpp", "-o", "Main", "-O2", "-Wall", "-lm", "--static", "-DONLINE_JUDGE") //compile
+	var cmd *exec.Cmd
+	if this.Language == config.LanguageC {
+		cmd = exec.Command("gcc","Main.c","-o","Main","-O2","-Wall","-lm","--static","-std=c99","-DONLINE_JUDGE")
+	}else if this.Language == config.LanguageCPP{
+		cmd = exec.Command("g++", "Main.cpp", "-o", "Main", "-O2", "-Wall", "-lm", "--static", "-DONLINE_JUDGE") //compile
+	}else if this.Language == config.LanguageJAVA {
+		cmd = exec.Command("javac","-J-Xms32m","-J-Xmx256m","Main.java")
+	}
 	err := cmd.Run()
 	if err != nil {
 		log.Println(err)
@@ -193,12 +200,16 @@ func (this *solution) compile() {
 
 func (this *solution) files() {
 	//begin write code to file
-	fl, err := os.Open("Main.cpp")
-	for err == nil {
-		fl.Close()
-		fl, err = os.Open("Main.cpp")
+	var codefilename string
+	if this.Language == config.LanguageC {
+		codefilename = "Main.c"
+	}else if this.Language == config.LanguageCPP {
+		codefilename = "Main.cpp"
+	}else if this.Language == config.LanguageJAVA {
+		codefilename = "Main.java"
 	}
-	codefile, err := os.Create("Main.cpp")
+
+	codefile, err := os.Create(codefilename)
 	defer codefile.Close()
 
 	_, err = codefile.WriteString(this.Code)

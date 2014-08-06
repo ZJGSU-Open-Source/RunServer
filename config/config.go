@@ -15,3 +15,10 @@ const (
 	JudgeOLE = 9  //Output Limit Exceeded
 	JudgeCP  = 10 //wait to Compare Output
 )
+
+const (
+	LanguageNA	= 0	//None
+	LanguageC	= 1	//C
+	LanguageCPP = 2 //C++
+	LanguageJAVA= 3 //Java
+)
