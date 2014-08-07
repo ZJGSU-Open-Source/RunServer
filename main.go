@@ -61,17 +61,17 @@ func main() {
 
 	pwd, err := os.Getwd()
 
-	cmd := exec.Command("mkdir", "/home/sake/run/"+strconv.Itoa(one.Sid))
+	cmd := exec.Command("mkdir", "../run/"+strconv.Itoa(one.Sid))
 	cmd.Run()
 
-	cmd = exec.Command("cp", "-r", "/home/sake/data/"+strconv.Itoa(one.Pid), "/home/sake/run/"+strconv.Itoa(one.Sid))
+	cmd = exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(one.Pid), "../run/"+strconv.Itoa(one.Sid))
 	cmd.Run()
 
-	os.Chdir("/home/sake/run/" + strconv.Itoa(one.Sid) + "/" + strconv.Itoa(one.Pid)) //
+	os.Chdir("../run/" + strconv.Itoa(one.Sid) + "/" + strconv.Itoa(one.Pid)) //
 	defer os.Chdir(pwd)
 
 	one.files()
-	defer os.RemoveAll("/home/sake/run/" + strconv.Itoa(one.Sid))
+	defer os.RemoveAll("../run/" + strconv.Itoa(one.Sid))
 
 	one.judge(*memoryLimit, *timeLimit)
 }
@@ -99,7 +99,7 @@ func (this *solution) judge(memoryLimit, timeLimit int) {
 		//TODO:should get all test files.
 		//this.RunJudge(memorylimit, timelimit, "sample.in", "sample.out")
 		//if one.Judge == config.JudgeAC {
-		this.RunJudge(memoryLimit, timeLimit, "test.in", "test.out")
+		this.RunJudge(memoryLimit, timeLimit, "sample.in", "sample.out")
 		//}
 	}
 
@@ -182,11 +182,11 @@ func (this *solution) compile() {
 
 	var cmd *exec.Cmd
 	if this.Language == config.LanguageC {
-		cmd = exec.Command("gcc","Main.c","-o","Main","-O2","-Wall","-lm","--static","-std=c99","-DONLINE_JUDGE")
-	}else if this.Language == config.LanguageCPP{
+		cmd = exec.Command("gcc", "Main.c", "-o", "Main", "-O2", "-Wall", "-lm", "--static", "-std=c99", "-DONLINE_JUDGE")
+	} else if this.Language == config.LanguageCPP {
 		cmd = exec.Command("g++", "Main.cpp", "-o", "Main", "-O2", "-Wall", "-lm", "--static", "-DONLINE_JUDGE") //compile
-	}else if this.Language == config.LanguageJAVA {
-		cmd = exec.Command("javac","-J-Xms32m","-J-Xmx256m","Main.java")
+	} else if this.Language == config.LanguageJAVA {
+		cmd = exec.Command("javac", "-J-Xms32m", "-J-Xmx256m", "Main.java")
 	}
 	err := cmd.Run()
 	if err != nil {
@@ -203,9 +203,9 @@ func (this *solution) files() {
 	var codefilename string
 	if this.Language == config.LanguageC {
 		codefilename = "Main.c"
-	}else if this.Language == config.LanguageCPP {
+	} else if this.Language == config.LanguageCPP {
 		codefilename = "Main.cpp"
-	}else if this.Language == config.LanguageJAVA {
+	} else if this.Language == config.LanguageJAVA {
 		codefilename = "Main.java"
 	}
 
