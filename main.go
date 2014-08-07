@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -66,13 +67,12 @@ func main() {
 
 	cmd = exec.Command("cp", "-r", "/home/sake/data/"+strconv.Itoa(one.Pid), "/home/sake/run/"+strconv.Itoa(one.Sid))
 	cmd.Run()
+	defer os.RemoveAll("/home/sake/run/" + strconv.Itoa(one.Sid))
 
 	os.Chdir("/home/sake/run/" + strconv.Itoa(one.Sid) + "/" + strconv.Itoa(one.Pid)) //
 	defer os.Chdir(pwd)
 
 	one.files()
-	defer os.RemoveAll("/home/sake/run/" + strconv.Itoa(one.Sid))
-
 	one.judge(*memoryLimit, *timeLimit)
 }
 
@@ -182,11 +182,11 @@ func (this *solution) compile() {
 
 	var cmd *exec.Cmd
 	if this.Language == config.LanguageC {
-		cmd = exec.Command("gcc","Main.c","-o","Main","-O2","-Wall","-lm","--static","-std=c99","-DONLINE_JUDGE")
-	}else if this.Language == config.LanguageCPP{
+		cmd = exec.Command("gcc", "Main.c", "-o", "Main", "-O2", "-Wall", "-lm", "--static", "-std=c99", "-DONLINE_JUDGE")
+	} else if this.Language == config.LanguageCPP {
 		cmd = exec.Command("g++", "Main.cpp", "-o", "Main", "-O2", "-Wall", "-lm", "--static", "-DONLINE_JUDGE") //compile
-	}else if this.Language == config.LanguageJAVA {
-		cmd = exec.Command("javac","-J-Xms32m","-J-Xmx256m","Main.java")
+	} else if this.Language == config.LanguageJAVA {
+		cmd = exec.Command("javac", "-J-Xms32m", "-J-Xmx256m", "Main.java")
 	}
 	err := cmd.Run()
 	if err != nil {
@@ -203,9 +203,9 @@ func (this *solution) files() {
 	var codefilename string
 	if this.Language == config.LanguageC {
 		codefilename = "Main.c"
-	}else if this.Language == config.LanguageCPP {
+	} else if this.Language == config.LanguageCPP {
 		codefilename = "Main.cpp"
-	}else if this.Language == config.LanguageJAVA {
+	} else if this.Language == config.LanguageJAVA {
 		codefilename = "Main.java"
 	}
 
@@ -275,12 +275,20 @@ func (this *solution) RunJudge(memorylimit, timelimit int, infilename, outfilena
 	select {
 	case res := <-channel:
 		if res == config.JudgeCP {
-			this.Time = int(bcmd.ProcessState.SystemTime()+bcmd.ProcessState.UserTime()) / 1000000
+			rusage, _ := bcmd.ProcessState.SysUsage().(*syscall.Rusage)
+
+			this.Time = int((rusage.Stime.Usec + rusage.Utime.Usec) / 1000)
 			if this.Time >= timelimit {
 				this.Time = timelimit
 				this.Judge = config.JudgeTLE
 				return
 			}
+			this.Memory = int(rusage.Minflt) * syscall.Getpagesize() / 1024
+
+			if this.Memory >= memorylimit {
+				this.Judge = config.JudgeMLE
+			}
+
 			user_out := out.String()
 			this.Judge = compare(std_out, user_out)
 		}
