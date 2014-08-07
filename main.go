@@ -62,14 +62,14 @@ func main() {
 
 	pwd, err := os.Getwd()
 
-	cmd := exec.Command("mkdir", "/home/sake/run/"+strconv.Itoa(one.Sid))
+	cmd := exec.Command("mkdir", "../run/"+strconv.Itoa(one.Sid))
 	cmd.Run()
 
-	cmd = exec.Command("cp", "-r", "/home/sake/data/"+strconv.Itoa(one.Pid), "/home/sake/run/"+strconv.Itoa(one.Sid))
+	cmd = exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(one.Pid), "../run/"+strconv.Itoa(one.Sid))
 	cmd.Run()
-	defer os.RemoveAll("/home/sake/run/" + strconv.Itoa(one.Sid))
+	defer os.RemoveAll("../run/" + strconv.Itoa(one.Sid))
 
-	os.Chdir("/home/sake/run/" + strconv.Itoa(one.Sid) + "/" + strconv.Itoa(one.Pid)) //
+	os.Chdir("../run/" + strconv.Itoa(one.Sid) + "/" + strconv.Itoa(one.Pid)) //
 	defer os.Chdir(pwd)
 
 	one.files()
@@ -99,7 +99,7 @@ func (this *solution) judge(memoryLimit, timeLimit int) {
 		//TODO:should get all test files.
 		//this.RunJudge(memorylimit, timelimit, "sample.in", "sample.out")
 		//if one.Judge == config.JudgeAC {
-		this.RunJudge(memoryLimit, timeLimit, "test.in", "test.out")
+		this.RunJudge(memoryLimit, timeLimit, "sample.in", "sample.out")
 		//}
 	}
 
