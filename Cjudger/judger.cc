@@ -503,7 +503,6 @@ void watch_solution(pid_t pidApp, char *infile, int &JudgeFlag,
                     JudgeFlag = OJ_RE;
 			}
             print_runtimeerror(strsignal(sig));
-            ptrace(PTRACE_KILL, pidApp, NULL, NULL);//new add by sake
             break;
         }
         /*     comment from http://www.felix021.com/blog/read.php?1662
