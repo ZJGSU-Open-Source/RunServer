@@ -34,16 +34,16 @@ static int java_time_bonus = 5;
 static int java_memory_bonus = 512;
 static char java_xms[BUFFER_SIZE];
 static char java_xmx[BUFFER_SIZE];
-static int sim_enable = 0;
 static int use_max_time=0;
 
+//record system call
+//标志：是否记录系统系统调用
 static char record_call=0;
 
-//static int sleep_tmp;
-
 static char lang_ext[3][8] = { "c", "cc", "java"};
-//static char buf[BUFFER_SIZE];
 
+//get_file_size get the specific file size
+//获取文件大小
 long get_file_size(const char * filename){
     struct stat f_stat;
     if (stat(filename, &f_stat) == -1){
@@ -52,6 +52,8 @@ long get_file_size(const char * filename){
     return (long) f_stat.st_size;
 }
 
+//write_log write log to file oj_home/log/client.log
+//将log信息写入oj_home/log/client.log文件
 void write_log(const char *fmt, ...){
     va_list ap;
     char buffer[4096];
@@ -71,6 +73,7 @@ void write_log(const char *fmt, ...){
     fclose(fp);
 }
 
+//执行命令
 int execute_cmd(const char * fmt, ...){
     char cmd[BUFFER_SIZE];
 
@@ -87,6 +90,8 @@ int execute_cmd(const char * fmt, ...){
 const int call_array_size=512;
 int call_counter[call_array_size]= {0};
 static char LANG_NAME[BUFFER_SIZE];
+//init_syscalls_limits
+//初始化系统调用限制表
 void init_syscalls_limits(int lang){
     int i;
     memset(call_counter, 0, sizeof(call_counter));
@@ -106,6 +111,8 @@ void init_syscalls_limits(int lang){
     }
 }
 
+//isInFile cheeck whether the filename ends with suffix ".in"
+//检查文件后缀是否为".in"
 int isInFile(const char fname[]){
     int l = strlen(fname);
     if (l <= 3 || strcmp(fname + l - 3, ".in") != 0){
@@ -115,10 +122,12 @@ int isInFile(const char fname[]){
     }
 }
 
+//比较用户输出和标准数据
 int compare(const char *file1, const char *file2){
 	return OJ_AC;
 }
 
+//获取命令输出
 FILE * read_cmd_output(const char * fmt, ...){
     char cmd[BUFFER_SIZE];
 
@@ -136,6 +145,7 @@ FILE * read_cmd_output(const char * fmt, ...){
     return ret;
 }
 
+//编译
 int compile(int lang){
     int pid;
 
@@ -195,13 +205,14 @@ int compile(int lang){
         int status=0;
         waitpid(pid, &status, 0);
         if (DEBUG){
-            printf("status=%d\n", status);
+            printf("status = %d\n", status);
         }
         return status;
     }
 
 }
 
+//获取进程状态
 int get_proc_status(int pid, const char * mark){
     FILE * pf;
     char fn[BUFFER_SIZE], buf[BUFFER_SIZE];
@@ -222,7 +233,7 @@ int get_proc_status(int pid, const char * mark){
 }
 
 
-
+//准备测试文件
 void prepare_files(char * filename, int namelen, char * infile, char * work_dir, char * outfile, char * userfile){
     char  fname[BUFFER_SIZE];
     strncpy(fname, filename, namelen);
@@ -234,7 +245,7 @@ void prepare_files(char * filename, int namelen, char * infile, char * work_dir,
     sprintf(userfile, "%s/run/user.out", oj_home);
 }
 
-
+//运行编译后的程序
 void run_solution(int & lang, char * work_dir, int & time_lmt, int & usedtime, int & mem_lmt){
     nice(19);
     chdir(work_dir);
@@ -242,8 +253,7 @@ void run_solution(int & lang, char * work_dir, int & time_lmt, int & usedtime, i
     freopen("data.in", "r", stdin);
     freopen("user.out", "w", stdout);
     freopen("error.out", "a+", stderr);
-    // trace me
-    ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+    
     // run me
     if (lang != 3)
         chroot(work_dir);
@@ -269,6 +279,7 @@ void run_solution(int & lang, char * work_dir, int & time_lmt, int & usedtime, i
     LIM.rlim_max = STD_F_LIM + STD_MB;
     LIM.rlim_cur = STD_F_LIM;
     setrlimit(RLIMIT_FSIZE, &LIM);
+    
     // proc limit
     if(lang == LangJava){  //java
         LIM.rlim_cur=LIM.rlim_max = 50;
@@ -289,11 +300,14 @@ void run_solution(int & lang, char * work_dir, int & time_lmt, int & usedtime, i
         setrlimit(RLIMIT_AS, &LIM);
     }
 
+    // trace me
+    ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+    
     if(lang == LangC || lang ==LangCC){
         execl("./Main", "./Main", (char *)NULL);
     }else if(lang == LangJava){
-//              sprintf(java_p1, "-Xms%dM", mem_lmt / 2);
-//              sprintf(java_p2, "-Xmx%dM", mem_lmt);
+        // sprintf(java_p1, "-Xms%dM", mem_lmt / 2);
+        // sprintf(java_p2, "-Xmx%dM", mem_lmt);
         execl("/usr/bin/java", "/usr/bin/java", java_xms,java_xmx,
               "-Djava.security.manager",
               "-Djava.security.policy=./java.policy", "Main", (char *)NULL);
@@ -301,7 +315,8 @@ void run_solution(int & lang, char * work_dir, int & time_lmt, int & usedtime, i
     //sleep(1);
     exit(0);
 }
-int fix_java_mis_judge(char *work_dir, int & ACflg, int & topmemory, int mem_lmt){
+
+int fix_java_mis_judge(char *work_dir, int & JudgeFlag, int & topmemory, int mem_lmt){
     int comp_res = OJ_AC;
     if (DEBUG)
         execute_cmd("cat %s/error.out", work_dir);
@@ -310,7 +325,7 @@ int fix_java_mis_judge(char *work_dir, int & ACflg, int & topmemory, int mem_lmt
 
     if (!comp_res){
         printf("JVM need more Memory!");
-        ACflg = OJ_ML;
+        JudgeFlag = OJ_ML;
         topmemory = mem_lmt * STD_MB;
     }
     comp_res = execute_cmd("grep 'java.lang.OutOfMemoryError'  %s/user.out",
@@ -318,44 +333,42 @@ int fix_java_mis_judge(char *work_dir, int & ACflg, int & topmemory, int mem_lmt
 
     if (!comp_res){
         printf("JVM need more Memory or Threads!");
-        ACflg = OJ_ML;
+        JudgeFlag = OJ_ML;
         topmemory = mem_lmt * STD_MB;
     }
     comp_res = execute_cmd("grep 'Could not create'  %s/error.out", work_dir);
 
     if (!comp_res){
         printf("jvm need more resource,tweak -Xmx(OJ_JAVA_BONUS) Settings");
-        ACflg = OJ_RE;
+        JudgeFlag = OJ_RE;
         //topmemory=0;
     }
     return comp_res;
 }
 
-void judge_solution(int & ACflg, int & usedtime, int time_lmt,
-                    char * infile, char * outfile, char * userfile, int & PEflg,
+//评判用户solution
+void judge_solution(int & JudgeFlag, int & usedtime, int time_lmt,
+                    char * infile, char * outfile, char * userfile,
                     int lang, char * work_dir, int & topmemory, int mem_lmt){
     //usedtime-=1000;
     int comp_res;
-    if (ACflg == OJ_AC && usedtime > time_lmt * 1000)
-        ACflg = OJ_TL;
-    if(topmemory>mem_lmt * STD_MB) ACflg=OJ_ML; //issues79
-    // compare
-    if (ACflg == OJ_AC){
-        comp_res = compare(outfile, userfile);
-        if (comp_res == OJ_WA){
-            ACflg = OJ_WA;
-            if (DEBUG){
-                printf("fail test %s\n", infile);
-            }
-        }
-        else if (comp_res == OJ_PE){
-            PEflg = OJ_PE;
-        }
-        ACflg = comp_res;
-    }
-    //jvm popup messages, if don't consider them will get miss-WrongAnswer
-    if (lang == 3 && ACflg != OJ_AC){
-        comp_res = fix_java_mis_judge(work_dir, ACflg, topmemory, mem_lmt);
+    if (usedtime > time_lmt * 1000){
+        JudgeFlag = OJ_TL;
+		return;
+	}
+    if(topmemory > mem_lmt * STD_MB){
+		JudgeFlag = OJ_ML; //issues79
+		return;
+	}
+	// compare
+	JudgeFlag = compare(outfile, userfile);
+	if (JudgeFlag == OJ_WA && DEBUG){
+			printf("fail test %s\n", infile);
+	}
+
+	//jvm popup messages, if don't consider them will get miss-WrongAnswer
+    if (lang == 3 && JudgeFlag != OJ_AC){
+        comp_res = fix_java_mis_judge(work_dir, JudgeFlag, topmemory, mem_lmt);
     }
 }
 
@@ -372,24 +385,17 @@ int get_page_fault_mem(struct rusage & ruse, pid_t & pidApp){
     return m_minflt;
 }
 
+//输出运行错误
 void print_runtimeerror(char * err){
     FILE *ferr=fopen("error.out","a+");
     fprintf(ferr,"Runtime Error:%s\n",err);
     fclose(ferr);
 }
 
-void clean_session(pid_t p){
-    //char cmd[BUFFER_SIZE];
-    const char *pre = "ps awx -o \"\%p \%P\"|grep -w ";
-    const char *post = " | awk \'{ print $1  }\'|xargs kill -9";
-    execute_cmd("%s %d %s",pre,p,post);
-    execute_cmd("ps aux |grep \\^judge|awk '{print $2}'|xargs kill");
-}
-
-void watch_solution(pid_t pidApp, char * infile, int & ACflg,
-                    char * userfile, char * outfile, int lang,
-                    int & topmemory, int mem_lmt, int & usedtime, int time_lmt,
-                    int & PEflg, char * work_dir){
+//观察用户程序运行
+void watch_solution(pid_t pidApp, char *infile, int &JudgeFlag,
+                    char *userfile, char *outfile, int lang,
+                    int &topmemory, int mem_lmt, int &usedtime, int time_lmt, char *work_dir){
     // parent
     int tempmemory;
 
@@ -415,11 +421,10 @@ void watch_solution(pid_t pidApp, char * infile, int & ACflg,
             topmemory = tempmemory;
         }
         if (topmemory > mem_lmt * STD_MB){
-            if (DEBUG)
+            if (DEBUG){
                 printf("out of memory %d\n", topmemory);
-            if (ACflg == OJ_AC){
-                ACflg = OJ_ML;
-            }
+			}
+			JudgeFlag = OJ_ML;
             ptrace(PTRACE_KILL, pidApp, NULL, NULL);
             break;
         }
@@ -428,14 +433,14 @@ void watch_solution(pid_t pidApp, char * infile, int & ACflg,
             break;
         }
         if (get_file_size("error.out")){
-            ACflg = OJ_RE;
+            JudgeFlag = OJ_RE;
             //addreinfo(solution_id);
             ptrace(PTRACE_KILL, pidApp, NULL, NULL);
             break;
         }
 
         if (get_file_size(userfile) > get_file_size(outfile) * 2+1024){
-            ACflg = OJ_OL;
+            JudgeFlag = OJ_OL;
             ptrace(PTRACE_KILL, pidApp, NULL, NULL);
             break;
         }
@@ -451,26 +456,22 @@ void watch_solution(pid_t pidApp, char * infile, int & ACflg,
                 printf("status>>8=%d\n", exitcode);
             }
             //psignal(exitcode, NULL);
-
-            if (ACflg == OJ_AC){
-                switch (exitcode){
-                case SIGCHLD:
+            switch (exitcode){
+				case SIGCHLD:
                 case SIGALRM:
                     alarm(0);
                 case SIGKILL:
                 case SIGXCPU:
-                    ACflg = OJ_TL;
+                    JudgeFlag = OJ_TL;
                     break;
                 case SIGXFSZ:
-                    ACflg = OJ_OL;
+                    JudgeFlag = OJ_OL;
                     break;
                 default:
-                    ACflg = OJ_RE;
-                }
-                print_runtimeerror(strsignal(exitcode));
-            }
+                    JudgeFlag = OJ_RE;
+			}
+            print_runtimeerror(strsignal(exitcode));
             ptrace(PTRACE_KILL, pidApp, NULL, NULL);
-
             break;
         }
         if (WIFSIGNALED(status)){
@@ -487,23 +488,22 @@ void watch_solution(pid_t pidApp, char * infile, int & ACflg,
                 printf("WTERMSIG=%d\n", sig);
                 psignal(sig, NULL);
             }
-            if (ACflg == OJ_AC){
-                switch (sig){
+			switch (sig){
                 case SIGCHLD:
                 case SIGALRM:
                     alarm(0);
                 case SIGKILL:
                 case SIGXCPU:
-                    ACflg = OJ_TL;
+                    JudgeFlag = OJ_TL;
                     break;
                 case SIGXFSZ:
-                    ACflg = OJ_OL;
+                    JudgeFlag = OJ_OL;
                     break;
                 default:
-                    ACflg = OJ_RE;
-                }
-                print_runtimeerror(strsignal(sig));
-            }
+                    JudgeFlag = OJ_RE;
+			}
+            print_runtimeerror(strsignal(sig));
+            ptrace(PTRACE_KILL, pidApp, NULL, NULL);//new add by sake
             break;
         }
         /*     comment from http://www.felix021.com/blog/read.php?1662
@@ -516,10 +516,9 @@ void watch_solution(pid_t pidApp, char * infile, int & ACflg,
         ptrace(PTRACE_GETREGS, pidApp, NULL, &reg);
 
         if (!record_call&&call_counter[reg.REG_SYSCALL] == 0) {   //do not limit JVM syscall for using different JVM
-            ACflg = OJ_RE;
+            JudgeFlag = OJ_RE;
             char error[BUFFER_SIZE];
-            sprintf(error,"[ERROR] A Not allowed system call! callid:%ld\n",
-                    reg.REG_SYSCALL);
+            sprintf(error,"[ERROR] A Not allowed system call! callid:%ld\n",reg.REG_SYSCALL);
             write_log(error);
             print_runtimeerror(error);
             ptrace(PTRACE_KILL, pidApp, NULL, NULL);
@@ -532,13 +531,14 @@ void watch_solution(pid_t pidApp, char * infile, int & ACflg,
         }
         sub = 1 - sub;
 
-
         ptrace(PTRACE_SYSCALL, pidApp, NULL, NULL);
     }
     usedtime += (ruse.ru_utime.tv_sec * 1000 + ruse.ru_utime.tv_usec / 1000);
     usedtime += (ruse.ru_stime.tv_sec * 1000 + ruse.ru_stime.tv_usec / 1000);
 }
 
+
+//清空运行环境
 void clean_workdir(char * work_dir ){
     if (DEBUG){
         execute_cmd("mv %s/* %s/log/", work_dir, oj_home);
@@ -548,6 +548,7 @@ void clean_workdir(char * work_dir ){
 
 }
 
+//参数初始化
 void init_parameters(int argc, char ** argv, int & lang, int & time_lmt, int & mem_lmt){
     if (argc < 3){
         fprintf(stderr, "Usage:%s [language] [time limit] [memory limit].\n", argv[0]);
@@ -561,6 +562,7 @@ void init_parameters(int argc, char ** argv, int & lang, int & time_lmt, int & m
     mem_lmt = atoi(argv[3]);
 }
 
+//计算in文件的个数
 int count_in_files(char * dirpath){
     const char  * cmd="ls -l %s/*.in|wc -l";
     int ret=0;
@@ -571,6 +573,7 @@ int count_in_files(char * dirpath){
     return ret;
 }
 
+//输出用户程序的所用系统调用及调用次数
 void print_call_array(){
     printf("int LANG_%sV[256]={",LANG_NAME);
     int i=0;
@@ -590,13 +593,11 @@ void print_call_array(){
     printf("0};\n");
 }
 
+//judger 程序入口
 int main(int argc, char** argv){
 
     char work_dir[BUFFER_SIZE];
-    int time_lmt, mem_lmt, lang, sim, sim_s_id,max_case_time=0;//单位是什么?
-
-    time_lmt=5;
-    mem_lmt=128;
+    int time_lmt = 5, mem_lmt = 128, lang;//单位是什么?
 
     init_parameters(argc, argv, lang, time_lmt, mem_lmt);
 	
@@ -604,11 +605,11 @@ int main(int argc, char** argv){
 
     //set work directory to start running & judging
     sprintf(work_dir, "%s/run/", oj_home);
-
     chdir(work_dir);
     if (!DEBUG){
         clean_workdir(work_dir);
     }
+
     //java is lucky
     if (lang == LangJava){
         // the limit for java
@@ -616,11 +617,9 @@ int main(int argc, char** argv){
         mem_lmt = mem_lmt + java_memory_bonus;
         // copy java.policy
         execute_cmd( "cp %s/etc/java0.policy %sjava.policy", oj_home, work_dir);
-
     }
 
     //never bigger than judged set value;
-    //
     if (time_lmt > 30 || time_lmt < 1){
         time_lmt = 30;
     }
@@ -665,17 +664,16 @@ int main(int argc, char** argv){
         exit(-1);
     }
 
-    int ACflg, PEflg;
-    ACflg = PEflg = OJ_AC;
+    int JudgeFlag = OJ_AC;
     int namelen;
     int usedtime = 0, topmemory = 0;
 
+
     // read files and run
-    int finalACflg=ACflg;
 
-    for (; ( ACflg == OJ_AC )&& (dirp = readdir(dp)) != NULL;){
-
-        namelen = isInFile(dirp->d_name); // check if the file is *.in or not
+    for (; ( JudgeFlag == OJ_AC )&& (dirp = readdir(dp)) != NULL;){
+	// for(; ( JudgeFlag == OJ_AC )&& (dirp = readdir(dp)) != NULL;{
+        namelen = isInFile(dirp->d_name); // check whether the file is *.in or not
         if (namelen == 0){
             continue;
         }
@@ -684,51 +682,36 @@ int main(int argc, char** argv){
         init_syscalls_limits(lang);
 
         pid_t pidApp = fork();
-
         if (pidApp == 0){
-
             run_solution(lang, work_dir, time_lmt, usedtime, mem_lmt);
+			exit(0);
         }else{
-            watch_solution(pidApp, infile, ACflg, userfile, outfile,
-                           lang, topmemory, mem_lmt, usedtime, time_lmt
-                           , PEflg, work_dir);
+			watch_solution(pidApp, infile, JudgeFlag, userfile, outfile, lang, topmemory, mem_lmt, usedtime, time_lmt, work_dir);
 
-            judge_solution(ACflg, usedtime, time_lmt, infile,
-                           outfile, userfile, PEflg, lang, work_dir, topmemory,
-                           mem_lmt);
-            if(use_max_time){
-                max_case_time=usedtime>max_case_time?usedtime:max_case_time;
-                usedtime=0;
-            }
-            //clean_session(pidApp);
+			if(JudgeFlag == OJ_AC){
+				judge_solution(JudgeFlag, usedtime, time_lmt, infile, outfile, userfile, lang, work_dir, topmemory, mem_lmt);
+			}
         }
     }
-    if (ACflg == OJ_AC && PEflg == OJ_PE){
-        ACflg = OJ_PE;
+
+    if(JudgeFlag == OJ_RE && DEBUG){
+        printf("add RE info ..... \n");
     }
 
-    if(ACflg==OJ_RE){
-        if(DEBUG){
-        	printf("add RE info ..... \n");
-        }
-    }
-    if(use_max_time){
-        usedtime=max_case_time;
-    }
-    if(ACflg == OJ_TL){
+	if(JudgeFlag == OJ_TL){
         usedtime=time_lmt*1000;
     }
   
-    if(ACflg==OJ_WA){
-        if(DEBUG) printf("add diff info of ..... \n");
-        //adddiffinfo();
+    if(JudgeFlag == OJ_WA && DEBUG) {
+        printf("add diff info of ..... \n");
     }
 
     clean_workdir(work_dir);
 
     if (DEBUG){
-        write_log("result = %d usedtime = %d topmemory = %d", ACflg,usedtime,topmemory);
+        write_log("result = %d usedtime = %d topmemory = %d", JudgeFlag,usedtime,topmemory);
     }
+
     if(record_call){
         print_call_array();
     }
