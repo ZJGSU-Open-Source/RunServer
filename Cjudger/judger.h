@@ -23,6 +23,8 @@ const int LangC 	= 0;
 const int LangCC	= 1;
 const int LangJava 	= 2;
 
+const char *oj_home = "/home/sake/Projects/GO/src";
+
 #ifdef __i386
 #define REG_SYSCALL orig_eax
 #define REG_RET eax

@@ -1,6 +1,6 @@
 //This file if forked from https://github.com/siqiaochen/oj_client_hustoj/
 //it hasn't been tested, so don't use it in your OJ.
-//
+//This file is in golang format, don't change.
 //
 
 #include <stdio.h>
@@ -25,8 +25,8 @@
 #include "okcalls.h"
 #include "judger.h"
 
-static int DEBUG = 0;
-static char oj_home[BUFFER_SIZE];
+const int DEBUG = 0;
+
 static int port_number;
 static int max_running;
 static int sleep_time;
@@ -37,13 +37,11 @@ static char java_xmx[BUFFER_SIZE];
 static int sim_enable = 0;
 static int use_max_time=0;
 
-static int shm_run=0;
-
 static char record_call=0;
 
 //static int sleep_tmp;
 
-static char lang_ext[4][8] = { "c", "cc", "pas", "java"};
+static char lang_ext[3][8] = { "c", "cc", "java"};
 //static char buf[BUFFER_SIZE];
 
 long get_file_size(const char * filename){
@@ -71,8 +69,8 @@ void write_log(const char *fmt, ...){
         printf("%s\n", buffer);
     va_end(ap);
     fclose(fp);
-
 }
+
 int execute_cmd(const char * fmt, ...){
     char cmd[BUFFER_SIZE];
 
@@ -110,10 +108,11 @@ void init_syscalls_limits(int lang){
 
 int isInFile(const char fname[]){
     int l = strlen(fname);
-    if (l <= 3 || strcmp(fname + l - 3, ".in") != 0)
+    if (l <= 3 || strcmp(fname + l - 3, ".in") != 0){
         return 0;
-    else
+    }else{
         return l - 3;
+    }
 }
 
 int compare(const char *file1, const char *file2){
@@ -129,7 +128,9 @@ FILE * read_cmd_output(const char * fmt, ...){
     va_start(ap, fmt);
     vsprintf(cmd, fmt, ap);
     va_end(ap);
-    if(DEBUG) printf("%s\n",cmd);
+    if(DEBUG){
+    	printf("%s\n",cmd);
+    }
     ret = popen(cmd,"r");
 
     return ret;
@@ -144,7 +145,7 @@ int compile(int lang){
     const char * CP_X[] = { "g++", "Main.cc", "-o", "Main", "-Wall",
                             "-lm", "--static","-std=c++0x", "-DONLINE_JUDGE", NULL
                           };
-//      const char * CP_J[] = { "javac", "-J-Xms32m", "-J-Xmx256m", "Main.java",NULL };
+	//const char * CP_J[] = { "javac", "-J-Xms32m", "-J-Xmx256m", "Main.java",NULL };
 
     char javac_buf[4][16];
     char *CP_J[5];
@@ -169,12 +170,9 @@ int compile(int lang){
         LIM.rlim_max =  STD_MB<<11;
         LIM.rlim_cur =  STD_MB<<11;
         setrlimit(RLIMIT_AS, &LIM);
-        if (lang != 2){
-            freopen("ce.txt", "w", stderr);
-            //freopen("/dev/null", "w", stdout);
-        }else{
-            freopen("ce.txt", "w", stdout);
-        }
+        
+        freopen("ce.txt", "w", stdout);//record copmile error
+        
         switch (lang){
         case LangC:
             execvp(CP_C[0], (char * const *) CP_C);
@@ -188,16 +186,17 @@ int compile(int lang){
         default:
             printf("nothing to do!\n");
         }
-        if (DEBUG)
+        if (DEBUG){
             printf("compile end!\n");
-        //exit(!system("cat ce.txt"));
+        }
+
         exit(0);
     }else{
         int status=0;
-
         waitpid(pid, &status, 0);
-        if (DEBUG)
+        if (DEBUG){
             printf("status=%d\n", status);
+        }
         return status;
     }
 
@@ -211,37 +210,33 @@ int get_proc_status(int pid, const char * mark){
     pf = fopen(fn, "r");
     int m = strlen(mark);
     while (pf && fgets(buf, BUFFER_SIZE - 1, pf)){
-
         buf[strlen(buf) - 1] = 0;
         if (strncmp(buf, mark, m) == 0){
             sscanf(buf + m + 1, "%d", &ret);
         }
     }
-    if (pf)
+    if(pf){
         fclose(pf);
+    }
     return ret;
 }
 
 
 
 void prepare_files(char * filename, int namelen, char * infile, char * work_dir, char * outfile, char * userfile){
-    //              printf("ACflg=%d %d check a file!\n",ACflg,solution_id);
-
     char  fname[BUFFER_SIZE];
     strncpy(fname, filename, namelen);
     fname[namelen] = 0;
-    sprintf(infile, "%s/data/%s.in", oj_home, fname);
+    sprintf(infile, "%s/ProblemData/%s.in", oj_home, fname);
     execute_cmd("cp %s %s/data.in", infile, work_dir);
-    execute_cmd("cp %s/data/*.dic %s/", oj_home,work_dir);
 
-    sprintf(outfile, "%s/data/%s.out", oj_home, fname);
+    sprintf(outfile, "%s/ProblemData/%s.out", oj_home, fname);
     sprintf(userfile, "%s/run/user.out", oj_home);
 }
 
 
 void run_solution(int & lang, char * work_dir, int & time_lmt, int & usedtime, int & mem_lmt){
     nice(19);
-    // now the user is "judger"
     chdir(work_dir);
     // open the files
     freopen("data.in", "r", stdin);
@@ -253,11 +248,11 @@ void run_solution(int & lang, char * work_dir, int & time_lmt, int & usedtime, i
     if (lang != 3)
         chroot(work_dir);
 
-    while(setgid(1536)!=0) sleep(1);
-    while(setuid(1536)!=0) sleep(1);
-    while(setresuid(1536, 1536, 1536)!=0) sleep(1);
+    // while(setgid(1536)!=0) sleep(1);
+    // while(setuid(1536)!=0) sleep(1);
+    // while(setresuid(1536, 1536, 1536)!=0) sleep(1);
 
-//      char java_p1[BUFFER_SIZE], java_p2[BUFFER_SIZE];
+	// char java_p1[BUFFER_SIZE], java_p2[BUFFER_SIZE];
     // child
     // set the limit
     struct rlimit LIM; // time limit, file limit& memory limit
@@ -338,10 +333,10 @@ int fix_java_mis_judge(char *work_dir, int & ACflg, int & topmemory, int mem_lmt
 
 void judge_solution(int & ACflg, int & usedtime, int time_lmt,
                     char * infile, char * outfile, char * userfile, int & PEflg,
-                    int lang, char * work_dir, int & topmemory, int mem_lmt, double num_of_test){
+                    int lang, char * work_dir, int & topmemory, int mem_lmt){
     //usedtime-=1000;
     int comp_res;
-    if (ACflg == OJ_AC && usedtime > time_lmt * 1000*(use_max_time?1:num_of_test))
+    if (ACflg == OJ_AC && usedtime > time_lmt * 1000)
         ACflg = OJ_TL;
     if(topmemory>mem_lmt * STD_MB) ACflg=OJ_ML; //issues79
     // compare
@@ -349,11 +344,13 @@ void judge_solution(int & ACflg, int & usedtime, int time_lmt,
         comp_res = compare(outfile, userfile);
         if (comp_res == OJ_WA){
             ACflg = OJ_WA;
-            if (DEBUG)
+            if (DEBUG){
                 printf("fail test %s\n", infile);
+            }
         }
-        else if (comp_res == OJ_PE)
+        else if (comp_res == OJ_PE){
             PEflg = OJ_PE;
+        }
         ACflg = comp_res;
     }
     //jvm popup messages, if don't consider them will get miss-WrongAnswer
@@ -374,11 +371,13 @@ int get_page_fault_mem(struct rusage & ruse, pid_t & pidApp){
     }
     return m_minflt;
 }
+
 void print_runtimeerror(char * err){
     FILE *ferr=fopen("error.out","a+");
     fprintf(ferr,"Runtime Error:%s\n",err);
     fclose(ferr);
 }
+
 void clean_session(pid_t p){
     //char cmd[BUFFER_SIZE];
     const char *pre = "ps awx -o \"\%p \%P\"|grep -w ";
@@ -394,8 +393,9 @@ void watch_solution(pid_t pidApp, char * infile, int & ACflg,
     // parent
     int tempmemory;
 
-    if (DEBUG)
+    if (DEBUG){
         printf("pid=%d judging %s\n", pidApp, infile);
+    }
 
     int status, sig, exitcode;
     struct user_regs_struct reg;
@@ -403,7 +403,6 @@ void watch_solution(pid_t pidApp, char * infile, int & ACflg,
     int sub = 0;
     while (1){
         // check the usage
-
         wait4(pidApp, &status, 0, &ruse);
 
 		//jvm gc ask VM before need,so used kernel page fault times and page size
@@ -428,7 +427,7 @@ void watch_solution(pid_t pidApp, char * infile, int & ACflg,
         if (WIFEXITED(status)){
             break;
         }
-        if ((lang < 4) && get_file_size("error.out")){
+        if (get_file_size("error.out")){
             ACflg = OJ_RE;
             //addreinfo(solution_id);
             ptrace(PTRACE_KILL, pidApp, NULL, NULL);
@@ -450,7 +449,6 @@ void watch_solution(pid_t pidApp, char * infile, int & ACflg,
         }else{
             if (DEBUG){
                 printf("status>>8=%d\n", exitcode);
-
             }
             //psignal(exitcode, NULL);
 
@@ -539,16 +537,13 @@ void watch_solution(pid_t pidApp, char * infile, int & ACflg,
     }
     usedtime += (ruse.ru_utime.tv_sec * 1000 + ruse.ru_utime.tv_usec / 1000);
     usedtime += (ruse.ru_stime.tv_sec * 1000 + ruse.ru_stime.tv_usec / 1000);
-
-    //clean_session(pidApp);
 }
+
 void clean_workdir(char * work_dir ){
     if (DEBUG){
-        execute_cmd("mv %s/* %slog/", work_dir, work_dir);
+        execute_cmd("mv %s/* %s/log/", work_dir, oj_home);
     }else{
-        execute_cmd("umount %s/proc", work_dir);
         execute_cmd("rm -Rf %s/*", work_dir);
-
     }
 
 }
@@ -556,30 +551,8 @@ void clean_workdir(char * work_dir ){
 void init_parameters(int argc, char ** argv, int & lang, int & time_lmt, int & mem_lmt){
     if (argc < 3){
         fprintf(stderr, "Usage:%s [language] [time limit] [memory limit].\n", argv[0]);
-        fprintf(stderr, "Multi:%s [language] [time limit] [memory limit] [base path],\n",
-                argv[0]);
-        fprintf(stderr,
-                "Debug:%s solution_id runner_id judge_base_path debug.\n",
-                argv[0]);
-        //exit(1);
-
-        lang = 0;
-        time_lmt = 10;
-        mem_lmt = 10;
-        strcpy(oj_home, "/home/judger");
-        chdir(oj_home);
-        DEBUG=1;
-        return;
+        exit(1);
     }
-    DEBUG = (argc > 6);
-    record_call=(argc > 7);
-    if(argc > 5){
-        strcpy(LANG_NAME,argv[5]);
-    }
-    if (argc > 4)
-        strcpy(oj_home, argv[4]);
-    else
-        strcpy(oj_home, "/home/judger");
 
     chdir(oj_home); // change the dir// init our work
 
@@ -587,19 +560,7 @@ void init_parameters(int argc, char ** argv, int & lang, int & time_lmt, int & m
     time_lmt = atoi(argv[2]);
     mem_lmt = atoi(argv[3]);
 }
-void mk_shm_workdir(char * work_dir){
-    char shm_path[BUFFER_SIZE];
-    sprintf(shm_path,"/dev/shm/hustoj/%s",work_dir);
-    execute_cmd("mkdir -p %s",shm_path);
-    execute_cmd("rm -rf %s",work_dir);
-    execute_cmd("ln -s %s %s/",shm_path,oj_home);
-    execute_cmd("chown judge %s ",shm_path);
-    execute_cmd("chmod 755 %s ",shm_path);
-    //sim need a soft link in shm_dir to work correctly
-    sprintf(shm_path,"/dev/shm/hustoj/%s/",oj_home);
-    execute_cmd("ln -s %s/data %s",oj_home,shm_path);
 
-}
 int count_in_files(char * dirpath){
     const char  * cmd="ls -l %s/*.in|wc -l";
     int ret=0;
@@ -632,24 +593,24 @@ void print_call_array(){
 int main(int argc, char** argv){
 
     char work_dir[BUFFER_SIZE];
-    int time_lmt, mem_lmt, lang, sim, sim_s_id,max_case_time=0;
+    int time_lmt, mem_lmt, lang, sim, sim_s_id,max_case_time=0;//单位是什么?
 
     time_lmt=5;
     mem_lmt=128;
 
-	//TODO. get problem limit
     init_parameters(argc, argv, lang, time_lmt, mem_lmt);
 	
+	//TODO get solution.
+
     //set work directory to start running & judging
     sprintf(work_dir, "%s/run/", oj_home);
 
-    if(shm_run) mk_shm_workdir(work_dir);
-
     chdir(work_dir);
-    if (!DEBUG)
+    if (!DEBUG){
         clean_workdir(work_dir);
+    }
     //java is lucky
-    if (lang == 3){
+    if (lang == LangJava){
         // the limit for java
         time_lmt = time_lmt + java_time_bonus;
         mem_lmt = mem_lmt + java_memory_bonus;
@@ -659,25 +620,29 @@ int main(int argc, char** argv){
     }
 
     //never bigger than judged set value;
-    if (time_lmt > 300 || time_lmt < 1)
-        time_lmt = 300;
-    if (mem_lmt > 1024 || mem_lmt < 1)
+    //
+    if (time_lmt > 30 || time_lmt < 1){
+        time_lmt = 30;
+    }
+    if (mem_lmt > 1024 || mem_lmt < 1){
         mem_lmt = 1024;
+    }
 
-    if (DEBUG)
+    if (DEBUG){
         printf("time: %d mem: %d\n", time_lmt, mem_lmt);
+    }
 
     // begin compile
     // set the result to compiling
     int Compile_OK;
-
     Compile_OK = compile(lang);
     if (Compile_OK != 0){
         //update_solution(OJ_CE, 0, 0, 0,0, 0.0);
-        if (!DEBUG)
+        if (!DEBUG){
             clean_workdir(work_dir);
-        else
+        }else{
             write_log("compile error");
+        }
         exit(0);
     }else{
         //update_solution(OJ_RI, 0, 0, 0,0, 0.0);
@@ -689,16 +654,13 @@ int main(int argc, char** argv){
     char infile[BUFFER_SIZE];
     char outfile[BUFFER_SIZE];
     char userfile[BUFFER_SIZE];
-    sprintf(fullpath, "%s/data/", oj_home); // the fullpath of data dir
-
-
+    sprintf(fullpath, "%s/ProblemData/", oj_home); // the fullpath of data dir
 
     // open DIRs
     DIR *dp;
     dirent *dirp;
 
     if ((dp = opendir(fullpath)) == NULL){
-
         write_log("No such dir:%s!\n", fullpath);
         exit(-1);
     }
@@ -709,15 +671,14 @@ int main(int argc, char** argv){
     int usedtime = 0, topmemory = 0;
 
     // read files and run
-    double pass_rate=0.0;
-    int num_of_test=0;
     int finalACflg=ACflg;
 
     for (; ( ACflg == OJ_AC )&& (dirp = readdir(dp)) != NULL;){
 
         namelen = isInFile(dirp->d_name); // check if the file is *.in or not
-        if (namelen == 0)
+        if (namelen == 0){
             continue;
+        }
 
         prepare_files(dirp->d_name, namelen, infile, work_dir, outfile, userfile);
         init_syscalls_limits(lang);
@@ -728,17 +689,13 @@ int main(int argc, char** argv){
 
             run_solution(lang, work_dir, time_lmt, usedtime, mem_lmt);
         }else{
-
-            num_of_test++;
-
             watch_solution(pidApp, infile, ACflg, userfile, outfile,
                            lang, topmemory, mem_lmt, usedtime, time_lmt
                            , PEflg, work_dir);
 
-
             judge_solution(ACflg, usedtime, time_lmt, infile,
                            outfile, userfile, PEflg, lang, work_dir, topmemory,
-                           mem_lmt, num_of_test);
+                           mem_lmt);
             if(use_max_time){
                 max_case_time=usedtime>max_case_time?usedtime:max_case_time;
                 usedtime=0;
@@ -746,20 +703,14 @@ int main(int argc, char** argv){
             //clean_session(pidApp);
         }
     }
-    if (ACflg == OJ_AC && PEflg == OJ_PE)
+    if (ACflg == OJ_AC && PEflg == OJ_PE){
         ACflg = OJ_PE;
-    if (sim_enable && ACflg == OJ_AC &&(finalACflg==OJ_AC)){
-        // do not compare similarity with other solutions
-        //sim = get_sim(lang, sim_s_id);
-        sim_s_id = 0;
-    }else{
-        sim = 0;
     }
-    //if(ACflg == OJ_RE)addreinfo(solution_id);
 
     if(ACflg==OJ_RE){
-        if(DEBUG) printf("add RE info ..... \n");
-     //   addreinfo(solution_id);
+        if(DEBUG){
+        	printf("add RE info ..... \n");
+        }
     }
     if(use_max_time){
         usedtime=max_case_time;
@@ -768,18 +719,16 @@ int main(int argc, char** argv){
         usedtime=time_lmt*1000;
     }
   
-    //update_solution(ACflg, usedtime, topmemory >> 10, sim,
-        //                sim_s_id,0);
     if(ACflg==OJ_WA){
         if(DEBUG) printf("add diff info of ..... \n");
         //adddiffinfo();
     }
-    //update_user();
-    //update_problem();
+
     clean_workdir(work_dir);
 
-    if (DEBUG)
-        write_log("result=%d", ACflg);
+    if (DEBUG){
+        write_log("result = %d usedtime = %d topmemory = %d", ACflg,usedtime,topmemory);
+    }
     if(record_call){
         print_call_array();
     }
