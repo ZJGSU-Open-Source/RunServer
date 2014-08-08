@@ -37,6 +37,13 @@ type solution struct {
 	Create string `json:"create"bson:"create"`
 }
 
+var logger *log.Logger
+
+func init(){
+	pf,_ := os.Create("log")
+	logger = log.New(pf,"",log.Lshortfile|log.Ltime)
+}
+
 func main() {
 	var sid = flag.Int("sid", -1, "solution id")
 	var timeLimit = flag.Int("time", -1, "time limit")
@@ -45,7 +52,7 @@ func main() {
 
 	response, err := http.Post(config.PostHost+"/solution/detail/sid/"+strconv.Itoa(*sid), "application/json", nil)
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 		return
 	}
 	defer response.Body.Close()
@@ -55,7 +62,7 @@ func main() {
 	if response.StatusCode == 200 {
 		err = LoadJson(response.Body, &one)
 		if err != nil {
-			log.Println(err)
+			logger.Println(err)
 			return
 		}
 	}
@@ -112,7 +119,7 @@ func (this *solution) judge(memoryLimit, timeLimit int) {
 	response, err := http.Post(config.PostHost+"/solution/count/pid/"+strconv.Itoa(this.Pid)+"/uid/"+this.Uid+"/action/solve", "application/json", nil)
 	defer response.Body.Close()
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 		return
 	}
 
@@ -120,7 +127,7 @@ func (this *solution) judge(memoryLimit, timeLimit int) {
 	if response.StatusCode == 200 {
 		err = LoadJson(response.Body, &c)
 		if err != nil {
-			log.Println(err)
+			logger.Println(err)
 			return
 		}
 
@@ -133,14 +140,14 @@ func (this *solution) judge(memoryLimit, timeLimit int) {
 	response, err = http.Post(config.PostHost+"/user/record/uid/"+this.Uid+"/action/"+action, "application/json", nil)
 	defer response.Body.Close()
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 		return
 	}
 
 	response, err = http.Post(config.PostHost+"/problem/record/pid/"+strconv.Itoa(this.Pid)+"/action/"+action, "application/json", nil)
 	defer response.Body.Close()
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 		return
 	}
 
@@ -190,7 +197,7 @@ func (this *solution) compile() {
 	}
 	err := cmd.Run()
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 		this.Judge = config.JudgeCE //compiler error
 		return
 	}
@@ -214,19 +221,19 @@ func (this *solution) files() {
 
 	_, err = codefile.WriteString(this.Code)
 	if err != nil {
-		log.Println("source code writing to file failed")
+		logger.Println("source code writing to file failed")
 	}
 	//end write code to file
 }
 
 func (this *solution) RunJudge(memorylimit, timelimit int, infilename, outfilename string) {
-	log.Println("run solution")
+	logger.Println("run solution")
 	this.Judge = config.JudgePD
 
 	std_in, std_out_f := os.Stdin, os.Stdout
 	std_in, err := os.Open(infilename)
 	if err != nil {
-		log.Println("Open std_in file failed")
+		logger.Println("Open std_in file failed")
 		return
 	}
 	defer std_in.Close()
@@ -235,7 +242,7 @@ func (this *solution) RunJudge(memorylimit, timelimit int, infilename, outfilena
 	var std_out string
 	std_out_f, err = os.Open(outfilename)
 	if err != nil {
-		log.Println("open std_out file failed")
+		logger.Println("open std_out file failed")
 		return
 	} else {
 		reader := bufio.NewReader(std_out_f)
@@ -258,7 +265,13 @@ func (this *solution) RunJudge(memorylimit, timelimit int, infilename, outfilena
 	channel := make(chan int)
 	//process_id := make(chan int)
 	defer close(channel)
-	bcmd := exec.Command("./Main")
+	var bcmd *exec.Cmd
+	if this.Language == config.LanguageJAVA {
+		bcmd = exec.Command("java", "Main")
+	} else {
+		bcmd = exec.Command("./Main")
+
+	}
 	bcmd.Stdin = std_in
 	bcmd.Stdout = &out
 	go func() {
@@ -304,13 +317,13 @@ func (this *solution) RunJudge(memorylimit, timelimit int, infilename, outfilena
 func (this *solution) update() {
 	reader, err := PostReader(this)
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 		return
 	}
 	response, err := http.Post(config.PostHost+"/solution/update/sid/"+strconv.Itoa(this.Sid), "application/json", reader)
 	defer response.Body.Close()
 	if err != nil {
-		log.Println(err)
+		logger.Println(err)
 		return
 	}
 }

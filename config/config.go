@@ -17,8 +17,8 @@ const (
 )
 
 const (
-	LanguageNA	= 0	//None
-	LanguageC	= 1	//C
-	LanguageCPP = 2 //C++
-	LanguageJAVA= 3 //Java
+	LanguageNA   = 0 //None
+	LanguageC    = 1 //C
+	LanguageCPP  = 2 //C++
+	LanguageJAVA = 3 //Java
 )
