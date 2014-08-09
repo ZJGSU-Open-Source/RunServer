@@ -2,7 +2,6 @@ package main
 
 import (
 	"RunServer/config"
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"flag"
@@ -13,8 +12,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
-	"time"
 )
 
 type solution struct {
@@ -39,9 +36,9 @@ type solution struct {
 
 var logger *log.Logger
 
-func init(){
-	pf,_ := os.Create("log")
-	logger = log.New(pf,"",log.Lshortfile|log.Ltime)
+func init() {
+	pf, _ := os.Create("log")
+	logger = log.New(pf, "", log.Lshortfile|log.Ltime)
 }
 
 func main() {
@@ -67,8 +64,6 @@ func main() {
 		}
 	}
 
-	pwd, err := os.Getwd()
-
 	cmd := exec.Command("mkdir", "../run/"+strconv.Itoa(one.Sid))
 	cmd.Run()
 
@@ -76,11 +71,10 @@ func main() {
 	cmd.Run()
 	defer os.RemoveAll("../run/" + strconv.Itoa(one.Sid))
 
-	os.Chdir("../run/" + strconv.Itoa(one.Sid) + "/" + strconv.Itoa(one.Pid)) //
-	defer os.Chdir(pwd)
-
-	one.files()
-	one.judge(*memoryLimit, *timeLimit)
+	workdir := "../run/" + strconv.Itoa(one.Sid) + "/" + strconv.Itoa(one.Pid)
+	logger.Println("workdir is ", workdir)
+	one.files(workdir)
+	one.judge(*memoryLimit, *timeLimit, workdir)
 }
 
 func PostReader(i interface{}) (r io.Reader, err error) {
@@ -97,16 +91,16 @@ func LoadJson(r io.Reader, i interface{}) (err error) {
 	return
 }
 
-func (this *solution) judge(memoryLimit, timeLimit int) {
+func (this *solution) judge(memoryLimit, timeLimit int, workdir string) {
 
-	this.compile()
+	this.compile(workdir)
 	if this.Judge != config.JudgeCE {
 		this.Judge = config.JudgeRJ
 		this.update()
 		//TODO:should get all test files.
 		//this.RunJudge(memorylimit, timelimit, "sample.in", "sample.out")
 		//if one.Judge == config.JudgeAC {
-		this.RunJudge(memoryLimit, timeLimit, "sample.in", "sample.out")
+		this.RunJudge(memoryLimit, timeLimit, workdir)
 		//}
 	}
 
@@ -154,66 +148,23 @@ func (this *solution) judge(memoryLimit, timeLimit int) {
 	this.update()
 }
 
-func compare(std_out, user_out string) int {
-	if std_out == user_out {
-		return config.JudgeAC
-	} else {
-		return config.JudgeWA
-	}
-}
-
-//一段c程序，获得pid程序的运行内存，示例：m_vmpeak = get_proc_status(pid, "VmPeak:");
-// func get_proc_status(pid int, mark string) int {
-//
-
-// 	var buf bytes.Buffer
-// 	var ret int
-
-// 	fn := "/proc/" + strconv.Itoa(pid) + "/status"
-// 	pf := os.Open(fn)
-//	defer pf.close()
-//
-// 	m := len(mark)
-// 	for pf && fgets(buf, BUFFER_SIZE-1, pf) {
-// 		buf[strlen(buf)-1] = 0
-// 		if strncmp(buf, mark, m) == 0 {
-// 			sscanf(buf+m+1, "%d", &ret)
-// 		}
-// 	}
-
-// 	return ret
-// }
-
-func (this *solution) compile() {
-	//begin compile source code
-
-	var cmd *exec.Cmd
-	if this.Language == config.LanguageC {
-		cmd = exec.Command("gcc", "Main.c", "-o", "Main", "-O2", "-Wall", "-lm", "--static", "-std=c99", "-DONLINE_JUDGE")
-	} else if this.Language == config.LanguageCPP {
-		cmd = exec.Command("g++", "Main.cpp", "-o", "Main", "-O2", "-Wall", "-lm", "--static", "-DONLINE_JUDGE") //compile
-	} else if this.Language == config.LanguageJAVA {
-		cmd = exec.Command("javac", "-J-Xms32m", "-J-Xmx256m", "Main.java")
-	}
-	err := cmd.Run()
-	if err != nil {
-		logger.Println(err)
+func (this *solution) compile(workdir string) {
+	cmd := exec.Command("./compiler", strconv.Itoa(this.Language), workdir)
+	cmd.Run()
+	if cmd.ProcessState.String() != "exit status 0" {
 		this.Judge = config.JudgeCE //compiler error
-		return
 	}
-
-	//end compile source code
 }
 
-func (this *solution) files() {
+func (this *solution) files(workdir string) {
 	//begin write code to file
 	var codefilename string
 	if this.Language == config.LanguageC {
-		codefilename = "Main.c"
+		codefilename = workdir + "/Main.c"
 	} else if this.Language == config.LanguageCPP {
-		codefilename = "Main.cpp"
+		codefilename = workdir + "/Main.cc"
 	} else if this.Language == config.LanguageJAVA {
-		codefilename = "Main.java"
+		codefilename = workdir + "/Main.java"
 	}
 
 	codefile, err := os.Create(codefilename)
@@ -226,92 +177,21 @@ func (this *solution) files() {
 	//end write code to file
 }
 
-func (this *solution) RunJudge(memorylimit, timelimit int, infilename, outfilename string) {
+func (this *solution) RunJudge(memorylimit, timelimit int, workdir string) {
 	logger.Println("run solution")
-	this.Judge = config.JudgePD
-
-	std_in, std_out_f := os.Stdin, os.Stdout
-	std_in, err := os.Open(infilename)
-	if err != nil {
-		logger.Println("Open std_in file failed")
-		return
-	}
-	defer std_in.Close()
-
-	//begin read the std_out text
-	var std_out string
-	std_out_f, err = os.Open(outfilename)
-	if err != nil {
-		logger.Println("open std_out file failed")
-		return
-	} else {
-		reader := bufio.NewReader(std_out_f)
-		for true {
-			line, _, err := reader.ReadLine()
-			if err == io.EOF {
-				std_out = std_out + string(line) //+ "\n"
-				break
-			} else if err != nil {
-				break
-			}
-			std_out = std_out + string(line) + "\n"
-		}
-	}
-	defer std_out_f.Close()
-	//end read the std_out text
 
 	var out bytes.Buffer
-	//begin run
-	channel := make(chan int)
-	//process_id := make(chan int)
-	defer close(channel)
-	var bcmd *exec.Cmd
-	if this.Language == config.LanguageJAVA {
-		bcmd = exec.Command("java", "Main")
-	} else {
-		bcmd = exec.Command("./Main")
-
-	}
-	bcmd.Stdin = std_in
-	bcmd.Stdout = &out
-	go func() {
-		bcmd.Start()
-		err := bcmd.Wait()
-		if err != nil {
-			channel <- config.JudgeRE //runtime error
-			return
-		}
-		channel <- config.JudgeCP
-	}()
-	//end run
-
-	select {
-	case res := <-channel:
-		if res == config.JudgeCP {
-			rusage, _ := bcmd.ProcessState.SysUsage().(*syscall.Rusage)
-
-			this.Time = int((rusage.Stime.Usec + rusage.Utime.Usec) / 1000)
-			if this.Time >= timelimit {
-				this.Time = timelimit
-				this.Judge = config.JudgeTLE
-				return
-			}
-			this.Memory = int(rusage.Minflt) * syscall.Getpagesize() / 1024
-
-			if this.Memory >= memorylimit {
-				this.Judge = config.JudgeMLE
-			}
-
-			user_out := out.String()
-			this.Judge = compare(std_out, user_out)
-		}
-	case <-time.After(time.Second * time.Duration(timelimit/1000)):
-		bcmd.Process.Kill()
-		<-channel
-		this.Judge = config.JudgeTLE
-		this.Time = timelimit
-	}
-	return
+	cmd := exec.Command("./runner", strconv.Itoa(this.Pid), strconv.Itoa(this.Language), strconv.Itoa(timelimit), strconv.Itoa(memorylimit), workdir)
+	cmd.Stdout = &out
+	cmd.Run()
+	sp := strings.Split(out.String(), " ")
+	this.Judge, _ = strconv.Atoi(sp[0])
+	this.Time, _ = strconv.Atoi(sp[1])
+	this.Memory, _ = strconv.Atoi(sp[2])
+	this.Memory = this.Memory / 1024
+	logger.Println(this.Judge)
+	logger.Println(this.Time)
+	logger.Println(this.Memory)
 }
 
 func (this *solution) update() {
