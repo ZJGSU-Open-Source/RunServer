@@ -103,43 +103,43 @@ func (this *solution) judge(memoryLimit, timeLimit int, workdir string) {
 	action := "submit"
 	if this.Judge == config.JudgeAC {
 		action = "solve"
-	}
 
-	///count if the problem has been solved
-	response, err := http.Post(config.PostHost+"/solution/count/pid/"+strconv.Itoa(this.Pid)+"/uid/"+this.Uid+"/action/solve", "application/json", nil)
-	defer response.Body.Close()
-	if err != nil {
-		logger.Println(err)
-		return
-	}
-
-	c := make(map[string]int)
-	if response.StatusCode == 200 {
-		err = LoadJson(response.Body, &c)
+		///count if the problem has been solved
+		response, err := http.Post(config.PostHost+"/solution/count/pid/"+strconv.Itoa(this.Pid)+"/uid/"+this.Uid+"/action/solve", "application/json", nil)
 		if err != nil {
 			logger.Println(err)
 			return
 		}
+		defer response.Body.Close()
 
-	}
-	///end count
+		c := make(map[string]int)
+		if response.StatusCode == 200 {
+			err = LoadJson(response.Body, &c)
+			if err != nil {
+				logger.Println(err)
+				return
+			}
+		}
+		///end count
 
-	if c["count"] >= 1 && action == "solve" { //当结果正确且不是第一次提交，只记录为提交而不记录为solve
-		action = "submit"
+		if c["count"] >= 1 && action == "solve" { //当结果正确且不是第一次提交，只记录为提交而不记录为solve
+			action = "submit"
+		}
 	}
-	response, err = http.Post(config.PostHost+"/user/record/uid/"+this.Uid+"/action/"+action, "application/json", nil)
-	defer response.Body.Close()
+
+	response, err := http.Post(config.PostHost+"/user/record/uid/"+this.Uid+"/action/"+action, "application/json", nil)
 	if err != nil {
 		logger.Println(err)
 		return
 	}
+	defer response.Body.Close()
 
 	response, err = http.Post(config.PostHost+"/problem/record/pid/"+strconv.Itoa(this.Pid)+"/action/"+action, "application/json", nil)
-	defer response.Body.Close()
 	if err != nil {
 		logger.Println(err)
 		return
 	}
+	defer response.Body.Close()
 
 	this.update()
 }
@@ -201,9 +201,9 @@ func (this *solution) update() {
 		return
 	}
 	response, err := http.Post(config.PostHost+"/solution/update/sid/"+strconv.Itoa(this.Sid), "application/json", reader)
-	defer response.Body.Close()
 	if err != nil {
 		logger.Println(err)
 		return
 	}
+	defer response.Body.Close()
 }
