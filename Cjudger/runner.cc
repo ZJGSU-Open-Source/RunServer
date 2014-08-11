@@ -117,10 +117,135 @@ int isInFile(const char fname[]){
     }
 }
 
-//比较用户输出和标准数据
-int compare(const char *file1, const char *file2){
-	return JudgeAC;
+void find_next_nonspace(int & c1, int & c2, FILE *& f1, FILE *& f2, int & ret){
+    // Find the next non-space character or \n.
+    while ((isspace(c1)) || (isspace(c2))){
+        if (c1 != c2){
+            if (c2 == EOF){
+                do{
+                    c1 = fgetc(f1);
+                }while (isspace(c1));
+                continue;
+            }else if (c1 == EOF){
+                do{
+                    c2 = fgetc(f2);
+                }while (isspace(c2));
+                continue;
+            }else if ((c1 == '\r' && c2 == '\n')){
+                c1 = fgetc(f1);
+            }else if ((c2 == '\r' && c1 == '\n')){
+                c2 = fgetc(f2);
+            }else{
+                if (DEBUG){
+                    printf("%d=%c\t%d=%c", c1, c1, c2, c2);
+                }
+                ret = JudgePE;
+            }
+        }
+        if (isspace(c1)){
+            c1 = fgetc(f1);
+        }if (isspace(c2)){
+            c2 = fgetc(f2);
+        }
+    }
 }
+
+// void make_diff_out(FILE *f1,FILE *f2,int c1,int c2,const char * path)
+// {
+//     FILE *out;
+//     char buf[45];
+//     out=fopen("diff.out","a+");
+//     fprintf(out,"=================%s\n",getFileNameFromPath(path));
+//     fprintf(out,"Right:\n%c",c1);
+//     if(fgets(buf,44,f1))
+//     {
+//         fprintf(out,"%s",buf);
+//     }
+//     fprintf(out,"\n-----------------\n");
+//     fprintf(out,"Your:\n%c",c2);
+//     if(fgets(buf,44,f2))
+//     {
+//         fprintf(out,"%s",buf);
+//     }
+//     fprintf(out,"\n=================\n");
+//     fclose(out);
+// }
+
+/*
+ * translated from ZOJ judger r367
+ * http://code.google.com/p/zoj/source/browse/trunk/judge_client/client/text_checker.cc#25
+ *
+ */
+ //比较用户输出和标准数据
+int compare(const char *file1, const char *file2)
+{
+    int ret = JudgeAC;
+    int c1,c2;
+    FILE * f1, *f2 ;
+    f1 = fopen(file1, "r");
+    f2 = fopen(file2, "r");
+    if (!f1 || !f2)
+    {
+        ret = JudgeRE;
+    }
+    else
+        for (;;)
+        {
+            // Find the first non-space character at the beginning of line.
+            // Blank lines are skipped.
+            c1 = fgetc(f1);
+            c2 = fgetc(f2);
+            find_next_nonspace(c1, c2, f1, f2, ret);
+            // Compare the current line.
+            for (;;)
+            {
+                // Read until 2 files return a space or 0 together.
+                while ((!isspace(c1) && c1) || (!isspace(c2) && c2))
+                {
+                    if (c1 == EOF && c2 == EOF)
+                    {
+                        goto end;
+                    }
+                    if (c1 == EOF || c2 == EOF)
+                    {
+                        break;
+                    }
+                    if (c1 != c2)
+                    {
+                        // Consecutive non-space characters should be all exactly the same
+                        ret = JudgeWA;
+                        goto end;
+                    }
+                    c1 = fgetc(f1);
+                    c2 = fgetc(f2);
+                }
+                find_next_nonspace(c1, c2, f1, f2, ret);
+                if (c1 == EOF && c2 == EOF)
+                {
+                    goto end;
+                }
+                if (c1 == EOF || c2 == EOF)
+                {
+                    ret = JudgeWA;
+                    goto end;
+                }
+
+                if ((c1 == '\n' || !c1) && (c2 == '\n' || !c2))
+                {
+                    break;
+                }
+            }
+        }
+end:
+    // if(ret==JudgeWA)make_diff_out(f1,f2,c1,c2,file1);
+    if (f1)
+        fclose(f1);
+    if (f2)
+        fclose(f2);
+    return ret;
+}
+
+
 
 //获取命令输出
 FILE * read_cmd_output(const char * fmt, ...){
@@ -322,7 +447,7 @@ void watch_solution(pid_t pidApp, char *infile, int &JudgeFlag,
 
 		//jvm gc ask VM before need,so used kernel page fault times and page size
         if (lang == LangJava){
-           tempmemory = get_page_fault_mem(ruse, pidApp);
+          tempmemory = get_page_fault_mem(ruse, pidApp);
         }else{    //other use VmPeak
             tempmemory = get_proc_status(pidApp, "VmPeak:") << 10;
         }
@@ -473,7 +598,7 @@ void init_parameters(int argc, char **argv, char *problemId, int &lang, int &tim
     problemId = argv[1];
     lang = atoi(argv[2]);
     time_lmt = atoi(argv[3])/1000;
-    mem_lmt = atoi(argv[4])*1024;
+    mem_lmt = atoi(argv[4])*1024/STD_MB*8;
     sprintf(path,"%s",argv[5]);
 }
 
@@ -501,7 +626,7 @@ void print_call_array(){
 int main(int argc, char** argv){
 
     char work_dir[BUFFER_SIZE],*problemId;
-    int time_lmt = 5, mem_lmt = 128, lang;//单位是什么?
+    int time_lmt = 5, mem_lmt = 128, lang;//单位是second and MB
 
     init_parameters(argc, argv, problemId, lang, time_lmt, mem_lmt,work_dir);
 
@@ -546,6 +671,7 @@ int main(int argc, char** argv){
         exit(-1);
     }
 
+    write_log("mem_limt %d",mem_lmt);
     int JudgeFlag = JudgeAC;
     int namelen;
     int usedtime = 0, topmemory = 0;

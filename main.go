@@ -189,7 +189,7 @@ func (this *solution) RunJudge(memorylimit, timelimit int, workdir string) {
 	}
 	this.Time, _ = strconv.Atoi(sp[1])
 	this.Memory, _ = strconv.Atoi(sp[2])
-	this.Memory = this.Memory / 1024
+	this.Memory = this.Memory / (1024 * 8) //b->KB
 	logger.Println(this.Time)
 	logger.Println(this.Memory)
 }
