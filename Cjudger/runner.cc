@@ -27,18 +27,11 @@
 
 const int DEBUG = 0;
 
-static int port_number;
-static int max_running;
-static int sleep_time;
-static int java_time_bonus = 5;
-static int java_memory_bonus = 512;
-static char java_xms[BUFFER_SIZE];
-static char java_xmx[BUFFER_SIZE];
 static int use_max_time=0;
 
 //record system call
 //标志：是否记录系统系统调用
-static char record_call=0;
+static char record_call = 0;
 
 static char lang_ext[3][8] = { "c", "cc", "java"};
 
@@ -180,8 +173,9 @@ void run_solution(int &lang, char *infile, char *work_dir, int &time_lmt, int &u
         printf("%s\n", infile);
     }
     // run me
-    if (lang != LangJava)
-        chroot(work_dir);
+     if (lang != LangJava){
+         chroot(work_dir);
+     }
 
     
     struct rlimit LIM; // time limit, file limit& memory limit
@@ -201,7 +195,7 @@ void run_solution(int &lang, char *infile, char *work_dir, int &time_lmt, int &u
     
     // proc limit
     if(lang == LangJava){  //java
-        LIM.rlim_cur=LIM.rlim_max = 50;
+        LIM.rlim_cur=LIM.rlim_max = 1000;
     }else{
         LIM.rlim_cur=LIM.rlim_max = 1;
     }
@@ -216,7 +210,7 @@ void run_solution(int &lang, char *infile, char *work_dir, int &time_lmt, int &u
     LIM.rlim_cur = STD_MB *mem_lmt/2*3;
     LIM.rlim_max = STD_MB *mem_lmt*2;
     if(lang != LangJava){
-        setrlimit(RLIMIT_AS, &LIM);
+       setrlimit(RLIMIT_AS, &LIM);
     }
 
     // trace me
@@ -225,45 +219,41 @@ void run_solution(int &lang, char *infile, char *work_dir, int &time_lmt, int &u
     if(lang == LangC || lang ==LangCC){
         execl("./Main", "./Main", (char *)NULL);
     }else if(lang == LangJava){
-        // sprintf(java_p1, "-Xms%dM", mem_lmt / 2);
-        // sprintf(java_p2, "-Xmx%dM", mem_lmt);
-        execl("/usr/bin/java", "/usr/bin/java", java_xms,java_xmx,
-              "-Djava.security.manager",
-              "-Djava.security.policy=./java.policy", "Main", (char *)NULL);
+        execl("/usr/bin/java", "/usr/bin/java", "-Xms128M", "-Xms512M", "-DONLINE_JUDGE=true", "Main", (char *)NULL );
     }
     //sleep(1);
     exit(0);
 }
 
-int fix_java_mis_judge(char *work_dir, int & JudgeFlag, int & topmemory, int mem_lmt){
-    int comp_res = JudgeAC;
-    if (DEBUG)
-        execute_cmd("cat %s/error.out", work_dir);
-    comp_res = execute_cmd("grep 'java.lang.OutOfMemoryError'  %s/error.out",
-                           work_dir);
+// int fix_java_mis_judge(char *work_dir, int & JudgeFlag, int & topmemory, int mem_lmt){
+//     int comp_res = JudgeAC;
+//     if (DEBUG)
+//         execute_cmd("cat %s/error.out", work_dir);
+//     comp_res = execute_cmd("grep 'java.lang.OutOfMemoryError'  %s/error.out",
+//                            work_dir);
 
-    if (!comp_res){
-        printf("JVM need more Memory!");
-        JudgeFlag = JudgeMLE;
-        topmemory = mem_lmt * STD_MB;
-    }
-    comp_res = execute_cmd("grep 'java.lang.OutOfMemoryError'  %s/user.out",
-                           work_dir);
+//     if (!comp_res){
+//         printf("JVM need more Memory!");
+//         JudgeFlag = JudgeMLE;
+//         topmemory = mem_lmt * STD_MB;
+//     }
+//     comp_res = execute_cmd("grep 'java.lang.OutOfMemoryError'  %s/user.out",
+//                            work_dir);
 
-    if (!comp_res){
-        printf("JVM need more Memory or Threads!");
-        JudgeFlag = JudgeMLE;
-        topmemory = mem_lmt * STD_MB;
-    }
-    comp_res = execute_cmd("grep 'Could not create'  %s/error.out", work_dir);
+//     if (!comp_res){
+//         printf("JVM need more Memory or Threads!");
+//         JudgeFlag = JudgeMLE;
+//         topmemory = mem_lmt * STD_MB;
+//     }
+//     comp_res = execute_cmd("grep 'Could not create'  %s/error.out", work_dir);
 
-    if (!comp_res){
-        printf("jvm need more resource,tweak -Xmx(OJ_JAVA_BONUS) Settings");
-        JudgeFlag = JudgeRE;
-        //topmemory=0;
-    }
-    return comp_res;
-}
+//     if (!comp_res){
+//         printf("jvm need more resource,tweak -Xmx(OJ_JAVA_BONUS) Settings");
+//         JudgeFlag = JudgeRE;
+//         //topmemory=0;
+//     }
+//     return comp_res;
+// }
 
 //评判用户solution
 void judge_solution(int & JudgeFlag, int & usedtime, int time_lmt,
@@ -286,9 +276,9 @@ void judge_solution(int & JudgeFlag, int & usedtime, int time_lmt,
 	}
 
 	//jvm popup messages, if don't consider them will get miss-WrongAnswer
-    if (lang == LangJava && JudgeFlag != JudgeAC){
-        comp_res = fix_java_mis_judge(work_dir, JudgeFlag, topmemory, mem_lmt);
-    }
+    // if (lang == LangJava && JudgeFlag != JudgeAC){
+    //     comp_res = fix_java_mis_judge(work_dir, JudgeFlag, topmemory, mem_lmt);
+    // }
 }
 
 int get_page_fault_mem(struct rusage & ruse, pid_t & pidApp){
@@ -332,7 +322,7 @@ void watch_solution(pid_t pidApp, char *infile, int &JudgeFlag,
 
 		//jvm gc ask VM before need,so used kernel page fault times and page size
         if (lang == LangJava){
-            tempmemory = get_page_fault_mem(ruse, pidApp);
+           tempmemory = get_page_fault_mem(ruse, pidApp);
         }else{    //other use VmPeak
             tempmemory = get_proc_status(pidApp, "VmPeak:") << 10;
         }
@@ -360,7 +350,6 @@ void watch_solution(pid_t pidApp, char *infile, int &JudgeFlag,
             break;
         }
         if (get_file_size("error.out")){
-            printf("herr\n");
             JudgeFlag = JudgeRE;
             ptrace(PTRACE_KILL, pidApp, NULL, NULL);
             break;
@@ -484,28 +473,28 @@ void init_parameters(int argc, char **argv, char *problemId, int &lang, int &tim
     problemId = argv[1];
     lang = atoi(argv[2]);
     time_lmt = atoi(argv[3])/1000;
-    mem_lmt = atoi(argv[4]);
+    mem_lmt = atoi(argv[4])*1024;
     sprintf(path,"%s",argv[5]);
 }
 
 //输出用户程序的所用系统调用及调用次数
 void print_call_array(){
-    printf("int LANG_%sV[256]={",LANG_NAME);
+    write_log("int LANG_%sV[256]={",LANG_NAME);
     int i=0;
     for (i = 0; i<call_array_size; i++){
         if(call_counter[i]){
-            printf("%d,",i);
+            write_log("%d,",i);
         }
     }
-    printf("0};\n");
+    write_log("0};\n");
 
-    printf("int LANG_%sC[256]={",LANG_NAME);
+    write_log("int LANG_%sC[256]={",LANG_NAME);
     for (i = 0; i<call_array_size; i++){
         if(call_counter[i]){
-            printf("HOJ_MAX_LIMIT,");
+            write_log("HOJ_MAX_LIMIT,");
         }
     }
-    printf("0};\n");
+    write_log("0};\n");
 }
 
 //judger 程序入口
@@ -524,10 +513,8 @@ int main(int argc, char** argv){
     //java is lucky
     if (lang == LangJava){
         // the limit for java
-        time_lmt = time_lmt + java_time_bonus;
-        mem_lmt = mem_lmt + java_memory_bonus;
-        // copy java.policy
-        execute_cmd( "cp %s/etc/java0.policy %sjava.policy", oj_home, work_dir);
+        time_lmt = time_lmt * 2;
+        mem_lmt = mem_lmt * 2;
     }
 
     //never bigger than judged set value;

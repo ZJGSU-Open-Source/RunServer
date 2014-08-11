@@ -33,16 +33,16 @@ int main(int argc, char** argv){
     const char * CP_X[] = { "g++", "Main.cc", "-o", "Main", "-Wall",
                             "-lm", "--static","-std=c++0x", "-DONLINE_JUDGE", NULL
                           };
-	//const char * CP_J[] = { "javac", "-J-Xms32m", "-J-Xmx256m", "Main.java",NULL };
+	const char * CP_J[] = { "javac", "-J-Xms32m", "-J-Xmx256m", "Main.java",NULL };
 
-    char javac_buf[4][16];
-    char *CP_J[5];
+    //char javac_buf[4][16];
+    //char *CP_J[5];
     // for(int i=0; i<4; i++) CP_J[i]=javac_buf[i];
     // sprintf(CP_J[0],"javac");
     // sprintf(CP_J[1],"-J%s",java_xms);
     // sprintf(CP_J[2],"-J%s",java_xmx);
     // sprintf(CP_J[3],"Main.java");
-    CP_J[4]=(char *)NULL;
+    //CP_J[4]=(char *)NULL;
 
     pid = fork();
     if (pid == 0){

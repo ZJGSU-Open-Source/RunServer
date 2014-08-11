@@ -97,11 +97,7 @@ func (this *solution) judge(memoryLimit, timeLimit int, workdir string) {
 	if this.Judge != config.JudgeCE {
 		this.Judge = config.JudgeRJ
 		this.update()
-		//TODO:should get all test files.
-		//this.RunJudge(memorylimit, timelimit, "sample.in", "sample.out")
-		//if one.Judge == config.JudgeAC {
 		this.RunJudge(memoryLimit, timeLimit, workdir)
-		//}
 	}
 
 	action := "submit"
@@ -185,11 +181,15 @@ func (this *solution) RunJudge(memorylimit, timelimit int, workdir string) {
 	cmd.Stdout = &out
 	cmd.Run()
 	sp := strings.Split(out.String(), " ")
-	this.Judge, _ = strconv.Atoi(sp[0])
+	var err error
+	this.Judge, err = strconv.Atoi(sp[0])
+	if err != nil {
+		logger.Println(err)
+		logger.Println(this.Judge)
+	}
 	this.Time, _ = strconv.Atoi(sp[1])
 	this.Memory, _ = strconv.Atoi(sp[2])
 	this.Memory = this.Memory / 1024
-	logger.Println(this.Judge)
 	logger.Println(this.Time)
 	logger.Println(this.Memory)
 }

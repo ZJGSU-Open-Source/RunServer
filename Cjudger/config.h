@@ -4,18 +4,17 @@
 #define STD_M_LIM (STD_MB<<7)
 #define BUFFER_SIZE 512
 
-const int JudgeNA  = 0;  //None
-const int JudgePD  = 1; //Pending
-const int JudgeRJ  = 2;  //Running & judgingconst
-const int JudgeAC  = 3;  //Accepted
-const int JudgeCE  = 4; //Compile Error
-const int JudgeRE  = 5;  //Runtime Error
-const int JudgeWA  = 6;  //Wrong Answer
-const int JudgeTLE = 7;  //Time Limit Exceeded
-const int JudgeMLE = 8;  //Memory Limit Exceeded
-const int JudgeOLE = 9;  //Output Limit Exceeded
-const int JudgeCP  = 10; //wait to Compare Output
-
+const int JudgePD  = 0; //Pending
+const int JudgeRJ  = 1; //Running & judging
+const int JudgeCE  = 2; //Compile Error
+const int JudgeAC  = 3; //Accepted
+const int JudgeRE  = 4; //Runtime Error
+const int JudgeWA  = 5; //Wrong Answer
+const int JudgeTLE = 6; //Time Limit Exceeded
+const int JudgeMLE = 7; //Memory Limit Exceeded
+const int JudgeOLE = 8; //Output Limit Exceeded
+const int JudgePE  = 9; //Presentation Error
+const int JudgeNA  = 10; //None
 
 const int LangN 	= 0;
 const int LangC 	= 1;
