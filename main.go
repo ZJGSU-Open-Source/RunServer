@@ -47,7 +47,7 @@ func main() {
 	var memoryLimit = flag.Int("memory", -1, "memory limit")
 	flag.Parse()
 
-	response, err := http.Post(config.PostHost+"/solution/detail/sid/"+strconv.Itoa(*sid), "application/json", nil)
+	response, err := http.Post(config.PostHost+"/solution?detail/sid?"+strconv.Itoa(*sid), "application/json", nil)
 	if err != nil {
 		logger.Println(err)
 		return
@@ -105,7 +105,7 @@ func (this *solution) judge(memoryLimit, timeLimit int, workdir string) {
 		action = "solve"
 
 		///count if the problem has been solved
-		response, err := http.Post(config.PostHost+"/solution/count/pid/"+strconv.Itoa(this.Pid)+"/uid/"+this.Uid+"/action/solve", "application/json", nil)
+		response, err := http.Post(config.PostHost+"/solution?count/pid?"+strconv.Itoa(this.Pid)+"/uid?"+this.Uid+"/action?solve", "application/json", nil)
 		if err != nil {
 			logger.Println(err)
 			return
@@ -127,14 +127,14 @@ func (this *solution) judge(memoryLimit, timeLimit int, workdir string) {
 		}
 	}
 
-	response, err := http.Post(config.PostHost+"/user/record/uid/"+this.Uid+"/action/"+action, "application/json", nil)
+	response, err := http.Post(config.PostHost+"/user?record/uid?"+this.Uid+"/action?"+action, "application/json", nil)
 	if err != nil {
 		logger.Println(err)
 		return
 	}
 	defer response.Body.Close()
 
-	response, err = http.Post(config.PostHost+"/problem/record/pid/"+strconv.Itoa(this.Pid)+"/action/"+action, "application/json", nil)
+	response, err = http.Post(config.PostHost+"/problem?record/pid?"+strconv.Itoa(this.Pid)+"/action?"+action, "application/json", nil)
 	if err != nil {
 		logger.Println(err)
 		return
@@ -200,7 +200,7 @@ func (this *solution) update() {
 		logger.Println(err)
 		return
 	}
-	response, err := http.Post(config.PostHost+"/solution/update/sid/"+strconv.Itoa(this.Sid), "application/json", reader)
+	response, err := http.Post(config.PostHost+"/solution?update/sid?"+strconv.Itoa(this.Sid), "application/json", reader)
 	if err != nil {
 		logger.Println(err)
 		return
