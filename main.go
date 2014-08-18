@@ -47,7 +47,6 @@ func main() {
 	var memoryLimit = flag.Int("memory", -1, "memory limit")
 	flag.Parse()
 
-	logger.Println(*sid)
 	response, err := http.Post(config.PostHost+"/solution?detail/sid?"+strconv.Itoa(*sid), "application/json", nil)
 	if err != nil {
 		logger.Println(err)
