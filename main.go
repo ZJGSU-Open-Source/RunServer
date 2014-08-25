@@ -1,13 +1,14 @@
 package main
 
 import (
+	"GoOnlineJudge/model"
+	"GoOnlineJudge/model/class"
 	"RunServer/config"
 	"bytes"
 	"encoding/json"
 	"flag"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
@@ -34,6 +35,10 @@ type solution struct {
 	Create int64 `json:"create"bson:"create"`
 }
 
+type SolutionModel struct {
+	class.Model
+}
+
 var logger *log.Logger
 
 func init() {
@@ -47,32 +52,44 @@ func main() {
 	var memoryLimit = flag.Int("memory", -1, "memory limit")
 	flag.Parse()
 
-	response, err := http.Post(config.PostHost+"/solution?detail/sid?"+strconv.Itoa(*sid), "application/json", nil)
+	solutionModel := model.SolutionModel{}
+	solid, err := strconv.Atoi(strconv.Itoa(*sid))
 	if err != nil {
 		logger.Println(err)
 		return
 	}
-	defer response.Body.Close()
+
+	sol, err := solutionModel.Detail(solid)
+
+	if err != nil {
+		logger.Println(err)
+		return
+	}
+	cmd := exec.Command("mkdir", "../run/"+strconv.Itoa(sol.Sid))
+	cmd.Run()
+
+	cmd = exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(sol.Pid), "../run/"+strconv.Itoa(sol.Sid))
+	cmd.Run()
+
+	workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
+	logger.Println("workdir is ", workdir)
 
 	var one solution
 
-	if response.StatusCode == 200 {
-		err = LoadJson(response.Body, &one)
-		if err != nil {
-			logger.Println(err)
-			return
-		}
-	}
+	one.Code = sol.Code
+	one.Judge = sol.Judge
+	one.Create = sol.Create
+	one.Language = sol.Language
+	one.Length = sol.Length
+	one.Memory = sol.Memory
+	one.Mid = sol.Mid
+	one.Module = sol.Module
+	one.Pid = sol.Pid
+	one.Sid = sol.Sid
+	one.Status = sol.Status
+	one.Time = sol.Time
+	one.Uid = sol.Uid
 
-	cmd := exec.Command("mkdir", "../run/"+strconv.Itoa(one.Sid))
-	cmd.Run()
-
-	cmd = exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(one.Pid), "../run/"+strconv.Itoa(one.Sid))
-	cmd.Run()
-	defer os.RemoveAll("../run/" + strconv.Itoa(one.Sid))
-
-	workdir := "../run/" + strconv.Itoa(one.Sid) + "/" + strconv.Itoa(one.Pid)
-	logger.Println("workdir is ", workdir)
 	one.files(workdir)
 	one.judge(*memoryLimit, *timeLimit, workdir)
 }
@@ -96,8 +113,11 @@ func (this *solution) judge(memoryLimit, timeLimit int, workdir string) {
 	this.compile(workdir)
 	if this.Judge != config.JudgeCE {
 		this.Judge = config.JudgeRJ
+		logger.Println("compiler success")
 		this.update()
 		this.RunJudge(memoryLimit, timeLimit, workdir)
+	} else {
+		logger.Println("compiler error")
 	}
 
 	action := "submit"
@@ -105,41 +125,39 @@ func (this *solution) judge(memoryLimit, timeLimit int, workdir string) {
 		action = "solve"
 
 		///count if the problem has been solved
-		response, err := http.Post(config.PostHost+"/solution?count/pid?"+strconv.Itoa(this.Pid)+"/uid?"+this.Uid+"/action?solve", "application/json", nil)
+		solutionModel := model.SolutionModel{}
+		qry := make(map[string]string)
+		qry["uid"] = this.Uid
+		qry["pid"] = strconv.Itoa(this.Pid)
+		qry["action"] = "solve"
+		c, err := solutionModel.Count(qry)
+
 		if err != nil {
 			logger.Println(err)
 			return
 		}
-		defer response.Body.Close()
-
-		c := make(map[string]int)
-		if response.StatusCode == 200 {
-			err = LoadJson(response.Body, &c)
-			if err != nil {
-				logger.Println(err)
-				return
-			}
-		}
 		///end count
 
-		if c["count"] >= 1 && action == "solve" { //当结果正确且不是第一次提交，只记录为提交而不记录为solve
+		if c >= 1 && action == "solve" { //当结果正确且不是第一次提交，只记录为提交而不记录为solve
 			action = "submit"
 		}
 	}
 
-	response, err := http.Post(config.PostHost+"/user?record/uid?"+this.Uid+"/action?"+action, "application/json", nil)
-	if err != nil {
-		logger.Println(err)
-		return
-	}
-	defer response.Body.Close()
+	userModel := model.UserModel{}
+	err := userModel.Record(this.Uid, action)
 
-	response, err = http.Post(config.PostHost+"/problem?record/pid?"+strconv.Itoa(this.Pid)+"/action?"+action, "application/json", nil)
 	if err != nil {
 		logger.Println(err)
 		return
 	}
-	defer response.Body.Close()
+
+	proModel := model.ProblemModel{}
+	err = proModel.Record(this.Pid, action)
+
+	if err != nil {
+		logger.Println(err)
+		return
+	}
 
 	this.update()
 }
@@ -196,15 +214,23 @@ func (this *solution) RunJudge(memorylimit, timelimit int, workdir string) {
 }
 
 func (this *solution) update() {
-	reader, err := PostReader(this)
+	sid, err := strconv.Atoi(strconv.Itoa(this.Sid))
+
+	solutionModel := model.SolutionModel{}
+	ori, err := solutionModel.Detail(sid)
 	if err != nil {
 		logger.Println(err)
 		return
 	}
-	response, err := http.Post(config.PostHost+"/solution?update/sid?"+strconv.Itoa(this.Sid), "application/json", reader)
+
+	ori.Judge = this.Judge
+	ori.Time = this.Time
+	ori.Memory = this.Memory
+
+	err = solutionModel.Update(sid, *ori)
+
 	if err != nil {
 		logger.Println(err)
 		return
 	}
-	defer response.Body.Close()
 }
