@@ -5,9 +5,7 @@ import (
 	"GoOnlineJudge/model/class"
 	"RunServer/config"
 	"bytes"
-	"encoding/json"
 	"flag"
-	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -53,23 +51,24 @@ func main() {
 	flag.Parse()
 
 	solutionModel := model.SolutionModel{}
-	solid, err := strconv.Atoi(strconv.Itoa(*sid))
+	solutionID, err := strconv.Atoi(strconv.Itoa(*sid))
 	if err != nil {
 		logger.Println(err)
 		return
 	}
 
-	sol, err := solutionModel.Detail(solid)
-
+	sol, err := solutionModel.Detail(solutionID)
 	if err != nil {
 		logger.Println(err)
 		return
 	}
+
 	cmd := exec.Command("mkdir", "../run/"+strconv.Itoa(sol.Sid))
 	cmd.Run()
 
 	cmd = exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(sol.Pid), "../run/"+strconv.Itoa(sol.Sid))
 	cmd.Run()
+	defer os.RemoveAll("../run/" + strconv.Itoa(sol.Sid))
 
 	workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
 	logger.Println("workdir is ", workdir)
@@ -94,22 +93,7 @@ func main() {
 	one.judge(*memoryLimit, *timeLimit, workdir)
 }
 
-func PostReader(i interface{}) (r io.Reader, err error) {
-	b, err := json.Marshal(i)
-	if err != nil {
-		return
-	}
-	r = strings.NewReader(string(b))
-	return
-}
-
-func LoadJson(r io.Reader, i interface{}) (err error) {
-	err = json.NewDecoder(r).Decode(i)
-	return
-}
-
 func (this *solution) judge(memoryLimit, timeLimit int, workdir string) {
-
 	this.compile(workdir)
 	if this.Judge != config.JudgeCE {
 		this.Judge = config.JudgeRJ
