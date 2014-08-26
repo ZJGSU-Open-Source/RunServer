@@ -48,6 +48,7 @@ func main() {
 	var sid = flag.Int("sid", -1, "solution id")
 	var timeLimit = flag.Int("time", -1, "time limit")
 	var memoryLimit = flag.Int("memory", -1, "memory limit")
+	var rejudge = flag.Int("rejudge", -1, "if rejudge")
 	flag.Parse()
 
 	solutionModel := model.SolutionModel{}
@@ -90,10 +91,10 @@ func main() {
 	one.Uid = sol.Uid
 
 	one.files(workdir)
-	one.judge(*memoryLimit, *timeLimit, workdir)
+	one.judge(*memoryLimit, *timeLimit, *rejudge, workdir)
 }
 
-func (this *solution) judge(memoryLimit, timeLimit int, workdir string) {
+func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string) {
 	this.compile(workdir)
 	if this.Judge != config.JudgeCE {
 		this.Judge = config.JudgeRJ
@@ -105,30 +106,44 @@ func (this *solution) judge(memoryLimit, timeLimit int, workdir string) {
 	}
 
 	action := "submit"
+
+	solutionModel := model.SolutionModel{}
+	sol, err := solutionModel.Detail(this.Sid)
+
+	qry := make(map[string]string)
+	qry["uid"] = this.Uid
+	qry["pid"] = strconv.Itoa(this.Pid)
+	qry["action"] = "solve"
+	c, err := solutionModel.Count(qry)
+	if err != nil {
+		logger.Println(err)
+		return
+	}
+
 	if this.Judge == config.JudgeAC {
-		action = "solve"
 
-		///count if the problem has been solved
-		solutionModel := model.SolutionModel{}
-		qry := make(map[string]string)
-		qry["uid"] = this.Uid
-		qry["pid"] = strconv.Itoa(this.Pid)
-		qry["action"] = "solve"
-		c, err := solutionModel.Count(qry)
-
-		if err != nil {
-			logger.Println(err)
-			return
-		}
-		///end count
-
-		if c >= 1 && action == "solve" { //当结果正确且不是第一次提交，只记录为提交而不记录为solve
+		if c == 0 {
+			action = "solve"
+		} else if c >= 1 {
 			action = "submit"
+		}
+	} else {
+
+		if c > 0 {
+			if rejudge == 1 {
+				if sol.Judge == config.JudgeAC {
+					action = "del"
+				} else {
+					action = "submit"
+				}
+			} else if rejudge == 0 {
+				action = "submit"
+			}
 		}
 	}
 
 	userModel := model.UserModel{}
-	err := userModel.Record(this.Uid, action)
+	err = userModel.Record(this.Uid, action, rejudge)
 
 	if err != nil {
 		logger.Println(err)
@@ -136,7 +151,7 @@ func (this *solution) judge(memoryLimit, timeLimit int, workdir string) {
 	}
 
 	proModel := model.ProblemModel{}
-	err = proModel.Record(this.Pid, action)
+	err = proModel.Record(this.Pid, action, rejudge)
 
 	if err != nil {
 		logger.Println(err)
