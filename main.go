@@ -114,6 +114,7 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 	qry["uid"] = this.Uid
 	qry["pid"] = strconv.Itoa(this.Pid)
 	qry["action"] = "solve"
+
 	c, err := solutionModel.Count(qry)
 	if err != nil {
 		logger.Println(err)
@@ -121,7 +122,6 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 	}
 
 	if this.Judge == config.JudgeAC {
-
 		if c == 0 {
 			action = "solve"
 		} else if c >= 1 {
@@ -208,8 +208,8 @@ func (this *solution) RunJudge(memorylimit, timelimit int, workdir string) {
 	this.Time, _ = strconv.Atoi(sp[1])
 	this.Memory, _ = strconv.Atoi(sp[2])
 	this.Memory = this.Memory / (1024 * 8) //b->KB
-	logger.Println(this.Time)
-	logger.Println(this.Memory)
+	logger.Println(this.Time, "ms")
+	logger.Println(this.Memory, "kB")
 }
 
 func (this *solution) update() {
