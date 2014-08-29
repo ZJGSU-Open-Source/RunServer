@@ -14,6 +14,7 @@ import (
 
 type solution struct {
 	model.Solution
+	c int
 }
 
 var logger *log.Logger
@@ -57,7 +58,25 @@ func main() {
 
 	one.Solution = *sol
 	one.files(workdir)
+	one.count()
 	one.judge(*memoryLimit, *timeLimit, *rejudge, workdir)
+}
+
+func (this *solution) count() {
+	solutionModel := model.SolutionModel{}
+
+	qry := make(map[string]string)
+	qry["uid"] = this.Uid
+	qry["pid"] = strconv.Itoa(this.Pid)
+	qry["action"] = "accept"
+
+	c, err := solutionModel.Count(qry)
+	if err != nil {
+		logger.Println(err)
+		return
+	}
+	this.c = c
+
 }
 
 func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string) {
@@ -73,31 +92,18 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 
 	solve, submit := 0, 1
 
-	solutionModel := model.SolutionModel{}
-
-	qry := make(map[string]string)
-	qry["uid"] = this.Uid
-	qry["pid"] = strconv.Itoa(this.Pid)
-	qry["action"] = "solve"
-
-	c, err := solutionModel.Count(qry)
-	if err != nil {
-		logger.Println(err)
-		return
-	}
-
 	record := false
 	if this.Judge == config.JudgeAC {
-		if c == 0 {
+		if this.c == 0 {
 			solve = 1
-		} else if c >= 1 {
+		} else if this.c >= 1 {
 			solve = 0
 		}
 	} else {
 		//here
 		//c should be 1, however c == 0
-		logger.Println(c)
-		if c == 1 && rejudge != -1 {
+		logger.Println(this.c)
+		if this.c == 1 && rejudge != -1 {
 			solve = -1
 			record = true
 		} else {
@@ -110,7 +116,7 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 
 	if record || rejudge == -1 {
 		userModel := model.UserModel{}
-		err = userModel.Record(this.Uid, solve, submit)
+		err := userModel.Record(this.Uid, solve, submit)
 
 		if err != nil {
 			logger.Println(err)
