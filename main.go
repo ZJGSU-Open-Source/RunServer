@@ -101,9 +101,6 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 			solve = 0
 		}
 	} else {
-		//here
-		//c should be 1, however c == 0
-		logger.Println(this.c)
 		if this.c == 1 && rejudge != -1 {
 			solve = -1
 			record = true
