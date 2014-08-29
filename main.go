@@ -53,8 +53,7 @@ func main() {
 	workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
 	logger.Println("workdir is ", workdir)
 
-	var one *solution
-
+	one := &solution{}
 	one.Solution = *sol
 	one.files(workdir)
 	one.judge(*memoryLimit, *timeLimit, *rejudge, workdir)
