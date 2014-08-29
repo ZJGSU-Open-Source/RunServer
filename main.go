@@ -2,7 +2,6 @@ package main
 
 import (
 	"GoOnlineJudge/model"
-	"GoOnlineJudge/model/class"
 	"RunServer/config"
 	"bytes"
 	"flag"
@@ -15,10 +14,6 @@ import (
 
 type solution struct {
 	model.Solution
-}
-
-type SolutionModel struct {
-	class.Model
 }
 
 var logger *log.Logger
