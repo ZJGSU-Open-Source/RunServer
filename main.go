@@ -14,23 +14,7 @@ import (
 )
 
 type solution struct {
-	Sid int `json:"sid"bson:"sid"`
-
-	Pid      int    `json:"pid"bson:"pid"`
-	Uid      string `json:"uid"bson:"uid"`
-	Judge    int    `json:"judge"bson:"judge"`
-	Time     int    `json:"time"bson:"time"`
-	Memory   int    `json:"memory"bson:"memory"`
-	Length   int    `json:"length"bson:"length"`
-	Language int    `json:"language"bson:"language"`
-
-	Module int `json:"module"bson:"module"`
-	Mid    int `json:"mid"bson:"mid"`
-
-	Code string `json:"code"bson:"code"`
-
-	Status int   `json:"status"bson:"status"`
-	Create int64 `json:"create"bson:"create"`
+	model.Solution
 }
 
 type SolutionModel struct {
@@ -74,22 +58,9 @@ func main() {
 	workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
 	logger.Println("workdir is ", workdir)
 
-	var one solution
+	var one *solution
 
-	one.Code = sol.Code
-	one.Judge = sol.Judge
-	one.Create = sol.Create
-	one.Language = sol.Language
-	one.Length = sol.Length
-	one.Memory = sol.Memory
-	one.Mid = sol.Mid
-	one.Module = sol.Module
-	one.Pid = sol.Pid
-	one.Sid = sol.Sid
-	one.Status = sol.Status
-	one.Time = sol.Time
-	one.Uid = sol.Uid
-
+	one.Solution = *sol
 	one.files(workdir)
 	one.judge(*memoryLimit, *timeLimit, *rejudge, workdir)
 }
@@ -105,10 +76,9 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 		logger.Println("compiler error")
 	}
 
-	action := "submit"
+	solve, submit := 0, 1
 
 	solutionModel := model.SolutionModel{}
-	sol, err := solutionModel.Detail(this.Sid)
 
 	qry := make(map[string]string)
 	qry["uid"] = this.Uid
@@ -121,43 +91,42 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 		return
 	}
 
+	record := false
 	if this.Judge == config.JudgeAC {
 		if c == 0 {
-			action = "solve"
+			solve = 1
 		} else if c >= 1 {
-			action = "submit"
+			solve = 0
 		}
 	} else {
-
-		if c > 0 {
-			if rejudge == 1 {
-				if sol.Judge == config.JudgeAC {
-					action = "del"
-				} else {
-					action = "submit"
-				}
-			} else if rejudge == 0 {
-				action = "submit"
-			}
+		if c == 1 && rejudge != -1 {
+			solve = -1
+			record = true
+		} else {
+			solve = 0
 		}
 	}
-
-	userModel := model.UserModel{}
-	err = userModel.Record(this.Uid, action, rejudge)
-
-	if err != nil {
-		logger.Println(err)
-		return
+	if rejudge != -1 {
+		submit = 0
 	}
 
-	proModel := model.ProblemModel{}
-	err = proModel.Record(this.Pid, action, rejudge)
+	if record || rejudge != -1 {
+		userModel := model.UserModel{}
+		err = userModel.Record(this.Uid, solve, submit)
 
-	if err != nil {
-		logger.Println(err)
-		return
+		if err != nil {
+			logger.Println(err)
+			return
+		}
+
+		proModel := model.ProblemModel{}
+		err = proModel.Record(this.Pid, solve, submit)
+
+		if err != nil {
+			logger.Println(err)
+			return
+		}
 	}
-
 	this.update()
 }
 
