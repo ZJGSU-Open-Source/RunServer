@@ -92,18 +92,16 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 
 	solve, submit := 0, 1
 
-	record := false
 	if this.Judge == config.JudgeAC {
 		if this.c == 0 {
-			record = true
 			solve = 1
 		} else if this.c >= 1 {
 			solve = 0
 		}
 	} else {
+
 		if this.c == 1 && rejudge != -1 {
 			solve = -1
-			record = true
 		} else {
 			solve = 0
 		}
@@ -112,22 +110,20 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 		submit = 0
 	}
 
-	if record || rejudge == -1 {
-		userModel := model.UserModel{}
-		err := userModel.Record(this.Uid, solve, submit)
+	userModel := model.UserModel{}
+	err := userModel.Record(this.Uid, solve, submit)
 
-		if err != nil {
-			logger.Println(err)
-			return
-		}
+	if err != nil {
+		logger.Println(err)
+		return
+	}
 
-		proModel := model.ProblemModel{}
-		err = proModel.Record(this.Pid, solve, submit)
+	proModel := model.ProblemModel{}
+	err = proModel.Record(this.Pid, solve, submit)
 
-		if err != nil {
-			logger.Println(err)
-			return
-		}
+	if err != nil {
+		logger.Println(err)
+		return
 	}
 	this.update()
 }
