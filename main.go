@@ -2,7 +2,6 @@ package main
 
 import (
 	"GoOnlineJudge/model"
-	"GoOnlineJudge/model/class"
 	"RunServer/config"
 	"bytes"
 	"flag"
@@ -15,10 +14,6 @@ import (
 
 type solution struct {
 	model.Solution
-}
-
-type SolutionModel struct {
-	class.Model
 }
 
 var logger *log.Logger
@@ -58,7 +53,6 @@ func main() {
 	workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
 	logger.Println("workdir is ", workdir)
 
-	//var one *solution
 	one := &solution{}
 
 	one.Solution = *sol
