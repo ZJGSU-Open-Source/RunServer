@@ -58,7 +58,8 @@ func main() {
 	workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
 	logger.Println("workdir is ", workdir)
 
-	var one *solution
+	//var one *solution
+	one := &solution{}
 
 	one.Solution = *sol
 	one.files(workdir)
@@ -99,6 +100,9 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 			solve = 0
 		}
 	} else {
+		//here
+		//c should be 1, however c == 0
+		logger.Println(c)
 		if c == 1 && rejudge != -1 {
 			solve = -1
 			record = true
@@ -110,7 +114,7 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 		submit = 0
 	}
 
-	if record || rejudge != -1 {
+	if record || rejudge == -1 {
 		userModel := model.UserModel{}
 		err = userModel.Record(this.Uid, solve, submit)
 
