@@ -95,6 +95,7 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 	record := false
 	if this.Judge == config.JudgeAC {
 		if this.c == 0 {
+			record = true
 			solve = 1
 		} else if this.c >= 1 {
 			solve = 0
