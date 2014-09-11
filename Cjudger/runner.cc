@@ -26,6 +26,7 @@
 #include "config.h"
 
 const int DEBUG = 0;
+static int sim_enable = 0;
 
 static int use_max_time=0;
 
@@ -116,6 +117,44 @@ int isInFile(const char fname[]){
         return l - 3;
     }
 }
+
+//Similarity test
+//相似度检测
+int get_sim(int solution_id, int lang, int pid, int &sim_s_id)
+{
+    char src_pth[BUFFER_SIZE];
+    //char cmd[BUFFER_SIZE];
+    sprintf(src_pth, "Main.%s", lang_ext[lang]);
+
+    int sim = execute_cmd("sim.sh %s %d", src_pth, pid);
+    if (!sim)
+    {
+        execute_cmd("mkdir ../data/%d/ac/", pid);
+
+        execute_cmd("mv %s ../data/%d/ac/%d.%s", src_pth, pid, solution_id,
+                    lang_ext[lang]);
+        //c cpp will
+        if(lang==0)execute_cmd("ln ../data/%d/ac/%d.%s ../data/%d/ac/%d.%s", pid, solution_id,
+                                   lang_ext[lang], pid, solution_id,lang_ext[lang+1]);
+        if(lang==1)execute_cmd("ln ../data/%d/ac/%d.%s ../data/%d/ac/%d.%s", pid, solution_id,
+                                   lang_ext[lang], pid, solution_id,lang_ext[lang-1]);
+    }
+    else
+    {
+
+        FILE * pf;
+        pf = fopen("sim", "r");
+        if (pf)
+        {
+            fscanf(pf, "%d%d", &sim, &sim_s_id);
+            fclose(pf);
+        }
+
+    }
+    if(solution_id<=sim_s_id) sim=0;
+    return sim;
+}
+
 
 void find_next_nonspace(int & c1, int & c2, FILE *& f1, FILE *& f2, int & ret){
     // Find the next non-space character or \n.
