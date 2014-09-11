@@ -106,9 +106,19 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 			solve = 0
 		}
 	}
+
 	if rejudge != -1 {
 		submit = 0
 	}
+
+	var sim int
+
+	if this.Judge == config.JudgeAC {
+		sim = this.get_sim(this.Sid, this.Language, this.Pid, workdir)
+	} else {
+		sim = 0
+	}
+	logger.Println(sim)
 
 	userModel := model.UserModel{}
 	err := userModel.Record(this.Uid, solve, submit)
@@ -126,6 +136,53 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 		return
 	}
 	this.update()
+}
+
+func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (Sim_s_id int) {
+	//workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
+	var ext string
+	if this.Language == config.LanguageC {
+		ext = "c"
+	} else if this.Language == config.LanguageCPP {
+		ext = "cc"
+	} else if this.Language == config.LanguageJAVA {
+		ext = "java"
+	}
+	src_path := workdir + "/" + "Main." + ext
+	cmd := exec.Command("../RunServer/sim/sim.sh", src_path, strconv.Itoa(Pid))
+	cmd.Run()
+	sim, err := strconv.Atoi(cmd.ProcessState.String())
+	logger.Println(sim, err)
+	/*
+			   if (!sim)
+		    {
+		        execute_cmd("mkdir ../data/%d/ac/", pid);
+
+		        execute_cmd("mv %s ../data/%d/ac/%d.%s", src_pth, pid, solution_id,
+		                    lang_ext[lang]);
+		        //c cpp will
+		        if(lang==0)execute_cmd("ln ../data/%d/ac/%d.%s ../data/%d/ac/%d.%s", pid, solution_id,
+		                                   lang_ext[lang], pid, solution_id,lang_ext[lang+1]);
+		        if(lang==1)execute_cmd("ln ../data/%d/ac/%d.%s ../data/%d/ac/%d.%s", pid, solution_id,
+		                                   lang_ext[lang], pid, solution_id,lang_ext[lang-1]);
+
+
+		    }
+		    else
+		    {
+
+		        FILE * pf;
+		        pf = fopen("sim", "r");
+		        if (pf)
+		        {
+		            fscanf(pf, "%d%d", &sim, &sim_s_id);
+		            fclose(pf);
+		        }
+
+		    }
+
+	*/
+	return
 }
 
 func (this *solution) compile(workdir string) {

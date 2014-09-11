@@ -25,3 +25,6 @@ copy
 RunServer
 runner
 compiler
+sim_c
+sim_java
+sim_text
