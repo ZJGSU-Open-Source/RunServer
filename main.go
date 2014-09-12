@@ -140,48 +140,63 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 
 func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (Sim_s_id int) {
 	//workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
-	var ext string
+	var extension string
 	if this.Language == config.LanguageC {
-		ext = "c"
+		extension = "c"
 	} else if this.Language == config.LanguageCPP {
-		ext = "cc"
+		extension = "cc"
 	} else if this.Language == config.LanguageJAVA {
-		ext = "java"
+		extension = "java"
 	}
-	src_path := workdir + "/" + "Main." + ext
-	cmd := exec.Command("../RunServer/sim/sim.sh", src_path, strconv.Itoa(Pid))
+
+	pid := this.Pid
+	proModel := model.ProblemModel{}
+	pro, err := proModel.Detail(pid)
+	if err != nil {
+		class.Logger.Debug(err)
+		return
+	}
+	qry := make(map[string]string)
+	qry["pid"] = strconv.Itoa(pro.Pid)
+
+	solutionModel := model.SolutionModel{}
+	list, err := solutionModel.List(qry)
+
+	sim_test_dir := workdir + "../sim_test"
+	cmd := exec.Command("mkdir", sim_test_dir)
 	cmd.Run()
-	sim, err := strconv.Atoi(cmd.ProcessState.String())
-	logger.Println(sim, err)
-	/*
-			   if (!sim)
-		    {
-		        execute_cmd("mkdir ../data/%d/ac/", pid);
 
-		        execute_cmd("mv %s ../data/%d/ac/%d.%s", src_pth, pid, solution_id,
-		                    lang_ext[lang]);
-		        //c cpp will
-		        if(lang==0)execute_cmd("ln ../data/%d/ac/%d.%s ../data/%d/ac/%d.%s", pid, solution_id,
-		                                   lang_ext[lang], pid, solution_id,lang_ext[lang+1]);
-		        if(lang==1)execute_cmd("ln ../data/%d/ac/%d.%s ../data/%d/ac/%d.%s", pid, solution_id,
-		                                   lang_ext[lang], pid, solution_id,lang_ext[lang-1]);
+	var count int
+	for i := range list {
+		sid := list[i].Sid
 
+		filepath := sim_test_dir + strconv.Itoa(i) + "." + extension
 
-		    }
-		    else
-		    {
+		codefile, err := os.Create(filepath)
+		defer codefile.Close()
 
-		        FILE * pf;
-		        pf = fopen("sim", "r");
-		        if (pf)
-		        {
-		            fscanf(pf, "%d%d", &sim, &sim_s_id);
-		            fclose(pf);
-		        }
+		_, err = codefile.WriteString(list[i].Code)
+		if err != nil {
+			logger.Println("source code writing to file failed")
+		}
 
-		    }
+		count++
+	}
 
-	*/
+	for i := range list {
+		sid := list[i].Sid
+		for {
+			cmd := exec.Command("../RunServer/sim/sim_"+extension, "-p", sim_test_dir, strconv.Itoa(sid), "| grep ^"+sim_test_dir+"| awk '{print $4}'")
+			cmd.Run()
+
+			sim_1 := "! -z" + cmd.ProcessState.String()
+			sim_2 := cmd.ProcessState.String() + "-gt 50"
+
+			if sim_1 && sim_2 {
+				Sim_s_id = sid
+			}
+		}
+	}
 	return
 }
 
