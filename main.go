@@ -49,7 +49,7 @@ func main() {
 
 	cmd = exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(sol.Pid), "../run/"+strconv.Itoa(sol.Sid))
 	cmd.Run()
-	defer os.RemoveAll("../run/" + strconv.Itoa(sol.Sid))
+	//defer os.RemoveAll("../run/" + strconv.Itoa(sol.Sid))
 
 	workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
 	logger.Println("workdir is ", workdir)
@@ -139,7 +139,6 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 }
 
 func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (Sim_s_id int) {
-	//workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
 	var extension string
 	if this.Language == config.LanguageC {
 		extension = "c"
@@ -153,7 +152,7 @@ func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (Sim_s_id 
 	proModel := model.ProblemModel{}
 	pro, err := proModel.Detail(pid)
 	if err != nil {
-		class.Logger.Debug(err)
+		logger.Println(err)
 		return
 	}
 	qry := make(map[string]string)
@@ -162,41 +161,44 @@ func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (Sim_s_id 
 	solutionModel := model.SolutionModel{}
 	list, err := solutionModel.List(qry)
 
-	sim_test_dir := workdir + "../sim_test"
+	sim_test_dir := workdir + "/../sim_test"
 	cmd := exec.Command("mkdir", sim_test_dir)
 	cmd.Run()
+
+	codefile, err := os.Create(sim_test_dir + "/../Main." + extension)
+	defer codefile.Close()
+
+	_, err = codefile.WriteString(this.Code)
+	if err != nil {
+		logger.Println("source code writing to file failed")
+	}
 
 	var count int
 	for i := range list {
 		sid := list[i].Sid
 
-		filepath := sim_test_dir + strconv.Itoa(i) + "." + extension
+		solutionModel := model.SolutionModel{}
+		sol, err := solutionModel.Detail(sid)
 
-		codefile, err := os.Create(filepath)
-		defer codefile.Close()
+		if sid != this.Sid && err == nil {
+			filepath := sim_test_dir + "/" + strconv.Itoa(sid) + "." + extension
 
-		_, err = codefile.WriteString(list[i].Code)
-		if err != nil {
-			logger.Println("source code writing to file failed")
-		}
+			codefile, err := os.Create(filepath)
+			defer codefile.Close()
 
-		count++
-	}
-
-	for i := range list {
-		sid := list[i].Sid
-		for {
-			cmd := exec.Command("../RunServer/sim/sim_"+extension, "-p", sim_test_dir, strconv.Itoa(sid), "| grep ^"+sim_test_dir+"| awk '{print $4}'")
-			cmd.Run()
-
-			sim_1 := "! -z" + cmd.ProcessState.String()
-			sim_2 := cmd.ProcessState.String() + "-gt 50"
-
-			if sim_1 && sim_2 {
-				Sim_s_id = sid
+			_, err = codefile.WriteString(sol.Code)
+			if err != nil {
+				logger.Println("source code writing to file failed")
 			}
+
+			count++
 		}
 	}
+
+	logger.Println(count)
+	cmd = exec.Command("../RunServer/sim/sim.sh", sim_test_dir, extension)
+	cmd.Run()
+
 	return
 }
 

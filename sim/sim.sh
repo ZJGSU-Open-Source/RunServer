@@ -1,8 +1,10 @@
 #!/bin/bash
-EXTENSION=`echo "$1" | cut -d'.' -f2`
-for i in ../data/$2/ac/*.$EXTENSION
+EXTENSION="$2"
+FILE="$1/../Main.$EXTENSION"
+for i in "$1"/*.$EXTENSION
 do 
-	sim=`sim_$EXTENSION -p $1 $i |grep ^$1|awk '{print $4}'`
+	sim=`../RunServer/sim/sim_$EXTENSION -p $FILE $i | grep -n ^"File $FILE" | awk '{print $3}'`
+	
 	if [ ! -z $sim ] && [ $sim -gt 50 ]
 	then 
 		sim_s_id=`basename $i`
