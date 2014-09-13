@@ -116,10 +116,10 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 
 	if this.Judge == config.JudgeAC {
 		sim, Sim_s_id = this.get_sim(this.Sid, this.Language, this.Pid, workdir)
-	} else {
-		sim = 0
 	}
-	logger.Println(sim, Sim_s_id)
+
+	this.Sim = sim
+	this.Sim_s_id = Sim_s_id
 
 	userModel := model.UserModel{}
 	err := userModel.Record(this.Uid, solve, submit)
@@ -200,16 +200,16 @@ func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (sim, Sim_
 	cmd = exec.Command("../RunServer/sim/sim.sh", sim_test_dir, extension)
 	cmd.Run()
 
-	if _, err := os.Stat("sim"); err == nil {
+	if _, err := os.Stat("./sim"); err == nil {
 		logger.Println("sim exist")
-		simfile, err := os.Open("sim")
+		simfile, err := os.Open("./sim")
 		if err != nil {
 			logger.Println("sim file open error")
 			os.Exit(1)
 		}
 		defer simfile.Close()
 
-		fmt.Fscanf(simfile, "%d %d", tmp, tmp2)
+		fmt.Fscanf(simfile, "%d %d", &sim, &Sim_s_id)
 	}
 	return sim, Sim_s_id
 }
@@ -278,6 +278,8 @@ func (this *solution) update() {
 	ori.Judge = this.Judge
 	ori.Time = this.Time
 	ori.Memory = this.Memory
+	ori.Sim = this.Sim
+	ori.Sim_s_id = this.Sim_s_id
 
 	err = solutionModel.Update(sid, *ori)
 
