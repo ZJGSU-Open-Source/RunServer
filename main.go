@@ -5,6 +5,7 @@ import (
 	"RunServer/config"
 	"bytes"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -111,14 +112,14 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 		submit = 0
 	}
 
-	var sim int
+	var sim, Sim_s_id int
 
 	if this.Judge == config.JudgeAC {
-		sim = this.get_sim(this.Sid, this.Language, this.Pid, workdir)
+		sim, Sim_s_id = this.get_sim(this.Sid, this.Language, this.Pid, workdir)
 	} else {
 		sim = 0
 	}
-	logger.Println(sim)
+	logger.Println(sim, Sim_s_id)
 
 	userModel := model.UserModel{}
 	err := userModel.Record(this.Uid, solve, submit)
@@ -138,7 +139,7 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 	this.update()
 }
 
-func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (Sim_s_id int) {
+func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (sim, Sim_s_id int) {
 	var extension string
 	if this.Language == config.LanguageC {
 		extension = "c"
@@ -199,7 +200,18 @@ func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (Sim_s_id 
 	cmd = exec.Command("../RunServer/sim/sim.sh", sim_test_dir, extension)
 	cmd.Run()
 
-	return
+	if _, err := os.Stat("sim"); err == nil {
+		logger.Println("sim exist")
+		simfile, err := os.Open("sim")
+		if err != nil {
+			logger.Println("sim file open error")
+			os.Exit(1)
+		}
+		defer simfile.Close()
+
+		fmt.Fscanf(simfile, "%d %d", tmp, tmp2)
+	}
+	return sim, Sim_s_id
 }
 
 func (this *solution) compile(workdir string) {
