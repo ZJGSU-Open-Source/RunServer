@@ -15,7 +15,8 @@ import (
 
 type solution struct {
 	model.Solution
-	c int
+	pidSolve int
+	sidSolve int
 }
 
 var logger *log.Logger
@@ -60,24 +61,39 @@ func main() {
 
 	one.Solution = *sol
 	one.files(workdir)
-	one.count()
+	one.count("pid")
+	one.count("sid")
+
 	one.judge(*memoryLimit, *timeLimit, *rejudge, workdir)
 }
 
-func (this *solution) count() {
+func (this *solution) count(types string) {
 	solutionModel := model.SolutionModel{}
 
 	qry := make(map[string]string)
-	qry["uid"] = this.Uid
-	qry["pid"] = strconv.Itoa(this.Pid)
-	qry["action"] = "accept"
+	if types == "pid" {
+		qry["uid"] = this.Uid
+		qry["pid"] = strconv.Itoa(this.Pid)
+		qry["action"] = "accept"
 
-	c, err := solutionModel.Count(qry)
-	if err != nil {
-		logger.Println(err)
-		return
+		c, err := solutionModel.Count(qry)
+		if err != nil {
+			logger.Println(err)
+			return
+		}
+		this.pidSolve = c
+	} else if types == "sid" {
+		qry["uid"] = this.Uid
+		qry["sid"] = strconv.Itoa(this.Sid)
+		qry["action"] = "accept"
+
+		c, err := solutionModel.Count(qry)
+		if err != nil {
+			logger.Println(err)
+			return
+		}
+		this.sidSolve = c
 	}
-	this.c = c
 
 }
 
@@ -95,14 +111,14 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 	solve, submit := 0, 1
 
 	if this.Judge == config.JudgeAC {
-		if this.c == 0 {
+		if this.pidSolve == 0 {
 			solve = 1
-		} else if this.c >= 1 {
+		} else if this.pidSolve >= 1 {
 			solve = 0
 		}
 	} else {
 
-		if this.c >= 1 && rejudge == true {
+		if this.sidSolve >= 1 && rejudge == true {
 			solve = -1
 		} else {
 			solve = 0
