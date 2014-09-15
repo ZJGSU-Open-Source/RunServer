@@ -29,7 +29,8 @@ func main() {
 	var sid = flag.Int("sid", -1, "solution id")
 	var timeLimit = flag.Int("time", -1, "time limit")
 	var memoryLimit = flag.Int("memory", -1, "memory limit")
-	var rejudge = flag.Int("rejudge", -1, "if rejudge")
+	//var rejudge = flag.Int("rejudge", -1, "if rejudge")
+	var rejudge = flag.Bool("rejudge", false, "if rejudge")
 	flag.Parse()
 
 	solutionModel := model.SolutionModel{}
@@ -50,7 +51,7 @@ func main() {
 
 	cmd = exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(sol.Pid), "../run/"+strconv.Itoa(sol.Sid))
 	cmd.Run()
-	//defer os.RemoveAll("../run/" + strconv.Itoa(sol.Sid))
+	defer os.RemoveAll("../run/" + strconv.Itoa(sol.Sid))
 
 	workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
 	logger.Println("workdir is ", workdir)
@@ -80,7 +81,7 @@ func (this *solution) count() {
 
 }
 
-func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string) {
+func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir string) {
 	this.compile(workdir)
 	if this.Judge != config.JudgeCE {
 		this.Judge = config.JudgeRJ
@@ -101,14 +102,14 @@ func (this *solution) judge(memoryLimit, timeLimit, rejudge int, workdir string)
 		}
 	} else {
 
-		if this.c == 1 && rejudge != -1 {
+		if this.c == 1 && rejudge == true && this.c > 0 {
 			solve = -1
 		} else {
 			solve = 0
 		}
 	}
 
-	if rejudge != -1 {
+	if rejudge == true {
 		submit = 0
 	}
 
