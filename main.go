@@ -29,9 +29,9 @@ func main() {
 	var sid = flag.Int("sid", -1, "solution id")
 	var timeLimit = flag.Int("time", -1, "time limit")
 	var memoryLimit = flag.Int("memory", -1, "memory limit")
-	//var rejudge = flag.Int("rejudge", -1, "if rejudge")
-	var rejudge = flag.Bool("rejudge", false, "if rejudge")
+	var rejudge = flag.Bool("rejudge", true, "if rejudge")
 	flag.Parse()
+	logger.Println(*rejudge)
 
 	solutionModel := model.SolutionModel{}
 	solutionID, err := strconv.Atoi(strconv.Itoa(*sid))
@@ -102,7 +102,7 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 		}
 	} else {
 
-		if this.c == 1 && rejudge == true && this.c > 0 {
+		if this.c >= 1 && rejudge == true {
 			solve = -1
 		} else {
 			solve = 0
