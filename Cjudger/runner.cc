@@ -344,7 +344,7 @@ void run_solution(int &lang, char *infile, char *work_dir, int &time_lmt, int &u
     if(lang == LangC || lang ==LangCC){
         execl("./Main", "./Main", (char *)NULL);
     }else if(lang == LangJava){
-        execl("/usr/bin/java", "/usr/bin/java", "-Xms128M", "-Xms512M", "-DONLINE_JUDGE=true", "Main", (char *)NULL );
+        execl("/usr/bin/java", "/usr/bin/java", "-Xms128M", "-Xms512M",  "-Djava.security.manager", "-Djava.security.policy=./java.policy", "-DONLINE_JUDGE=true", "Main", (char *)NULL );
     }
     //sleep(1);
     exit(0);
@@ -640,6 +640,7 @@ int main(int argc, char** argv){
         // the limit for java
         time_lmt = time_lmt * 2;
         mem_lmt = mem_lmt * 2;
+         execute_cmd( "cp /etc/java-7-openjdk/security/java.policy %s/java.policy", oj_home, work_dir);
     }
 
     //never bigger than judged set value;
