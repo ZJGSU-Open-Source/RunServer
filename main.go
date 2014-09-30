@@ -103,7 +103,6 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 			solve = 0
 		}
 	} else {
-
 		if this.pidSolve >= 1 && rejudge == true {
 			solve = -1
 		} else {
@@ -124,22 +123,40 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 	this.Sim = sim
 	this.Sim_s_id = Sim_s_id
 
-	userModel := model.UserModel{}
-	err := userModel.Record(this.Uid, solve, submit)
+	this.update()
 
-	if err != nil {
-		logger.Println(err)
-		return
-	}
+	solutionModel := model.SolutionModel{}
+	qry := make(map[string]string)
+	qry["action"] = "submit"
+	qry["pid"] = strconv.Itoa(this.Pid)
+
+	submit, _ = solutionModel.Count(qry)
+
+	qry["action"] = "solve"
+	solve, _ = solutionModel.Count(qry)
 
 	proModel := model.ProblemModel{}
-	err = proModel.Record(this.Pid, solve, submit)
+	err := proModel.Record(this.Pid, solve, submit)
+	if err != nil {
+		logger.Println(err)
+		return
+	}
+
+	qry["action"] = "submit"
+	qry["uid"] = this.Uid
+	submit, _ = solutionModel.Count(qry)
+
+	qry["action"] = "solve"
+	solve, _ = solutionModel.Count(qry)
+
+	userModel := model.UserModel{}
+	err = userModel.Record(this.Uid, solve, submit)
 
 	if err != nil {
 		logger.Println(err)
 		return
 	}
-	this.update()
+
 }
 
 func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (sim, Sim_s_id int) {
