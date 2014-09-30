@@ -144,6 +144,7 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 
 	qry["action"] = "submit"
 	qry["uid"] = this.Uid
+	delete(qry, "pid")
 	submit, _ = solutionModel.Count(qry)
 
 	qry["action"] = "solve"
