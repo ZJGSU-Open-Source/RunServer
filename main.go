@@ -13,8 +13,6 @@ import (
 
 type solution struct {
 	model.Solution
-	pidSolve int
-	sidSolve int
 }
 
 func judgeOne(info Info) {
@@ -47,26 +45,8 @@ func judgeOne(info Info) {
 
 	one.Solution = *sol
 	one.files(workdir)
-	one.count()
 
 	one.judge(info.Memory, info.Time, info.Rejudge, workdir)
-}
-
-func (this *solution) count() {
-	solutionModel := model.SolutionModel{}
-
-	qry := make(map[string]string)
-	qry["uid"] = this.Uid
-	qry["pid"] = strconv.Itoa(this.Pid)
-	qry["action"] = "accept"
-
-	c, err := solutionModel.Count(qry)
-	if err != nil {
-		logger.Println(err)
-		return
-	}
-	this.pidSolve = c
-
 }
 
 func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir string) {
@@ -78,26 +58,6 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 		this.RunJudge(memoryLimit, timeLimit, workdir)
 	} else {
 		logger.Println("compiler error")
-	}
-
-	solve, submit := 0, 1
-
-	if this.Judge == config.JudgeAC {
-		if this.pidSolve == 0 {
-			solve = 1
-		} else if this.pidSolve >= 1 {
-			solve = 0
-		}
-	} else {
-		if this.pidSolve >= 1 && rejudge == true {
-			solve = -1
-		} else {
-			solve = 0
-		}
-	}
-
-	if rejudge == true {
-		submit = 0
 	}
 
 	var sim, Sim_s_id int
@@ -125,7 +85,6 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 	err := proModel.Record(this.Pid, solve, submit)
 	if err != nil {
 		logger.Println(err)
-		return
 	}
 
 	qry["action"] = "submit"
@@ -138,10 +97,8 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 
 	userModel := model.UserModel{}
 	err = userModel.Record(this.Uid, solve, submit)
-
 	if err != nil {
 		logger.Println(err)
-		return
 	}
 
 }

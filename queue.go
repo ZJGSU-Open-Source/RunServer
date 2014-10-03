@@ -13,14 +13,14 @@ import (
 
 var (
 	logger        *log.Logger
-	WaittingQueue *list.List
+	waittingQueue *list.List
 	SyncControll  Sync
 )
 
 func init() {
 	pf, _ := os.Create("log")
 	logger = log.New(pf, "", log.Lshortfile|log.Ltime)
-	WaittingQueue = list.New()
+	waittingQueue = list.New()
 }
 
 func main() {
@@ -45,6 +45,7 @@ func LoadJson(r io.Reader, v interface{}) (err error) {
 	return
 }
 
+//Info 判题必须信息
 type Info struct {
 	Sid     int
 	Time    int
@@ -52,34 +53,39 @@ type Info struct {
 	Rejudge bool
 }
 
+// Sync 锁
 type Sync struct {
 	sync.Locker
 }
 
+// 添加到队尾
 func (s *Sync) AddQueue(info *Info) {
 	s.Lock()
 	defer s.Unlock()
 
-	WaittingQueue.PushBack(info)
+	waittingQueue.PushBack(info)
 }
 
+// 获得并删除队头
 func (s *Sync) GetFrontAndRemove() (info *Info) {
 	s.Lock()
 	defer s.Unlock()
 
-	info, _ = WaittingQueue.Front().Value.(*Info)
-	WaittingQueue.Remove(WaittingQueue.Front())
+	info, _ = waittingQueue.Front().Value.(*Info)
+	waittingQueue.Remove(waittingQueue.Front())
 	return
 }
 
+// 队列是否为空
 func (s *Sync) IsEmpty() bool {
 	s.Lock()
 	defer s.Unlock()
 
-	return WaittingQueue.Len() == 0
+	return waittingQueue.Len() == 0
 
 }
 
+//
 func JudgeForever() {
 	for {
 		if SyncControll.IsEmpty() == false {
