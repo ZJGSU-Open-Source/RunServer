@@ -4,9 +4,7 @@ import (
 	"GoOnlineJudge/model"
 	"RunServer/config"
 	"bytes"
-	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -17,23 +15,11 @@ type solution struct {
 	model.Solution
 }
 
-var logger *log.Logger
-
-func init() {
-	pf, _ := os.Create("log")
-	logger = log.New(pf, "", log.Lshortfile|log.Ltime)
-}
-
-func main() {
-	var sid = flag.Int("sid", -1, "solution id")
-	var timeLimit = flag.Int("time", -1, "time limit")
-	var memoryLimit = flag.Int("memory", -1, "memory limit")
-	var rejudge = flag.Bool("rejudge", true, "if rejudge")
-	flag.Parse()
-	logger.Println(*rejudge)
+func judgeOne(info Info) {
+	logger.Println(info)
 
 	solutionModel := model.SolutionModel{}
-	solutionID, err := strconv.Atoi(strconv.Itoa(*sid))
+	solutionID, err := strconv.Atoi(strconv.Itoa(info.Sid))
 	if err != nil {
 		logger.Println(err)
 		return
@@ -59,7 +45,8 @@ func main() {
 
 	one.Solution = *sol
 	one.files(workdir)
-	one.judge(*memoryLimit, *timeLimit, *rejudge, workdir)
+
+	one.judge(info.Memory, info.Time, info.Rejudge, workdir)
 }
 
 func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir string) {
