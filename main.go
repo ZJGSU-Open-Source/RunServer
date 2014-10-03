@@ -76,10 +76,10 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 	qry["action"] = "submit"
 	qry["pid"] = strconv.Itoa(this.Pid)
 
-	submit, _ = solutionModel.Count(qry)
+	submit, _ := solutionModel.Count(qry)
 
 	qry["action"] = "solve"
-	solve, _ = solutionModel.Count(qry)
+	solve, _ := solutionModel.Count(qry)
 
 	proModel := model.ProblemModel{}
 	err := proModel.Record(this.Pid, solve, submit)
