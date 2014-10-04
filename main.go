@@ -103,6 +103,7 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 
 }
 
+//get_sim 相似度检测，返回值为相似度和相似的id
 func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (sim, Sim_s_id int) {
 	var extension string
 	if this.Language == config.LanguageC {
@@ -229,6 +230,7 @@ func (this *solution) RunJudge(memorylimit, timelimit int, workdir string) {
 	logger.Println(this.Memory, "kB")
 }
 
+//update 更新判题结果
 func (this *solution) update() {
 	sid, err := strconv.Atoi(strconv.Itoa(this.Sid))
 
@@ -246,7 +248,6 @@ func (this *solution) update() {
 	ori.Sim_s_id = this.Sim_s_id
 
 	err = solutionModel.Update(sid, *ori)
-
 	if err != nil {
 		logger.Println(err)
 		return

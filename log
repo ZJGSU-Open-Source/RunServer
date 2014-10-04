@@ -1,0 +1,4 @@
+15:04:54 main.go:19: {34 1000 12222 false}
+15:04:54 main.go:42: workdir is  ../run/34/1
+15:04:54 main.go:205: source code writing to file failed
+15:04:54 main.go:60: compiler error
