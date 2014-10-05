@@ -1,5 +1,0 @@
-2014/10/05 17:05:29 queue.go:43: Sid 35, Problem Memory 12222, Problem Time 1000,Rejudge false
-2014/10/05 17:05:30 main.go:19: {35 1000 12222 false}
-2014/10/05 17:05:30 main.go:42: workdir is  ../run/35/1
-2014/10/05 17:05:30 main.go:207: source code writing to file failed
-2014/10/05 17:05:30 main.go:60: compiler error
