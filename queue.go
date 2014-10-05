@@ -19,15 +19,12 @@ var (
 
 func init() {
 	pf, _ := os.Create("log")
-	logger = log.New(pf, "", log.Lshortfile|log.Ltime)
+	logger = log.New(pf, "", log.Lshortfile|log.Ltime|log.Ldate)
 	waittingQueue = list.New()
 }
 
 func main() {
 	SyncControll = &Sync{}
-	if SyncControll.IsEmpty() {
-		log.Println("err")
-	}
 	go JudgeForever()
 	http.HandleFunc("/", Handler)
 	http.ListenAndServe(":8888", nil)

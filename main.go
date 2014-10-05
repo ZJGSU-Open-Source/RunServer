@@ -62,7 +62,7 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 
 	var sim, Sim_s_id int
 
-	if this.Judge == config.JudgeAC {
+	if this.Judge == config.JudgeAC && this.Module >= config.ModuleC { //当为练习或竞赛时检测
 		sim, Sim_s_id = this.get_sim(this.Sid, this.Language, this.Pid, workdir)
 	}
 
@@ -73,6 +73,7 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 
 	solutionModel := model.SolutionModel{}
 	qry := make(map[string]string)
+	qry["module"] = strconv.Itoa(config.ModuleP)
 	qry["action"] = "submit"
 	qry["pid"] = strconv.Itoa(this.Pid)
 
