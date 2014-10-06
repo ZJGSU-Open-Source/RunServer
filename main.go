@@ -93,8 +93,12 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 	delete(qry, "pid")
 	submit, _ = solutionModel.Count(qry)
 
-	solvelist, _ := solutionModel.Achieve(this.Uid)
+	solvelist, err := solutionModel.Achieve(this.Uid)
+	if err != nil {
+		logger.Println(err)
+	}
 	solve = len(solvelist)
+	logger.Println("solve's:", solve)
 
 	userModel := model.UserModel{}
 	err = userModel.Record(this.Uid, solve, submit)
