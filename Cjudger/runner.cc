@@ -1,6 +1,6 @@
-//This file if forked from https://github.com/siqiaochen/oj_client_hustoj/
-//it hasn't been tested, so don't use it in your OJ.
-//This file is in golang format, don't change.
+//This file is forked from https://github.com/siqiaochen/oj_client_hustoj/
+//It hasn't been tested, so don't use it in your OJ.
+//This file is in golang format, so please don't change anything.
 //
 
 #include <stdio.h>
