@@ -2,8 +2,11 @@
 
 Judger and Dispatcher for ZJGSU New OJ
 
-##Usage
-```bash
+##Install Dependences
 sudo apt-get install flex
-make
+
+##Build
+```bash
+./make.sh
+./RunServer
 ```
