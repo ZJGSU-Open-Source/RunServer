@@ -8,5 +8,9 @@ sudo apt-get install flex
 ##Build
 ```bash
 ./make.sh
+```
+
+##Run
+```bash
 ./RunServer
 ```
