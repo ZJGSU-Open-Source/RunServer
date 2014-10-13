@@ -105,7 +105,6 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 	if err != nil {
 		logger.Println(err)
 	}
-
 }
 
 //get_sim 相似度检测，返回值为相似度和相似的id
