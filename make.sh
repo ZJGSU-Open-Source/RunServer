@@ -3,6 +3,7 @@ go build
 echo Compiling runner and compiler
 g++ ./Cjudger/runner.cc -o runner
 g++ ./Cjudger/compiler.cc -o compiler
+mv runner compiler RunServer ../GoOnlineJudge
 echo Building similarity test
 cd sim/sim_2_67
 make binaries 
