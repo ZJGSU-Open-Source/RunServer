@@ -597,7 +597,7 @@ void init_parameters(int argc, char **argv, char *problemId, int &lang, int &tim
 
     problemId = argv[1];
     lang = atoi(argv[2]);
-    time_lmt = atoi(argv[3])/1000;
+    time_lmt = atoi(argv[3]);
     mem_lmt = atoi(argv[4])*1024/STD_MB*8;
     sprintf(path,"%s",argv[5]);
 }
