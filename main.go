@@ -57,6 +57,14 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 		this.update()
 		this.RunJudge(memoryLimit, timeLimit, workdir)
 	} else {
+		ce, err := os.Open(workdir + "/ce.txt")
+		if err != nil {
+			logger.Println(err)
+			this.Error = "compile error"
+		}
+		var b []byte
+		_, err = ce.Read(b)
+		this.Error = string(b)
 		logger.Println("compiler error")
 	}
 
@@ -250,6 +258,7 @@ func (this *solution) update() {
 	ori.Memory = this.Memory
 	ori.Sim = this.Sim
 	ori.Sim_s_id = this.Sim_s_id
+	ori.Error = this.Error
 
 	err = solutionModel.Update(sid, *ori)
 	if err != nil {
