@@ -20,5 +20,6 @@ Set variable `oj_home` equals to $GOPATH/src, make sure using absolute path to r
 
 ##Run
 ```bash
+cd ../GoOnlineJudge
 ./RunServer
 ```
