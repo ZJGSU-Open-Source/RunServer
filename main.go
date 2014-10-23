@@ -5,6 +5,7 @@ import (
 	"RunServer/config"
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strconv"
@@ -57,13 +58,10 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 		this.update()
 		this.RunJudge(memoryLimit, timeLimit, workdir)
 	} else {
-		ce, err := os.Open(workdir + "/ce.txt")
+		b, err := ioutil.ReadFile(workdir + "/ce.txt")
 		if err != nil {
 			logger.Println(err)
-			this.Error = "compile error"
 		}
-		var b []byte
-		_, err = ce.Read(b)
 		this.Error = string(b)
 		logger.Println("compiler error")
 	}

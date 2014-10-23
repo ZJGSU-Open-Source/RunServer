@@ -59,7 +59,7 @@ int main(int argc, char** argv){
         LIM.rlim_cur =  STD_MB<<11;
         setrlimit(RLIMIT_AS, &LIM);
         
-        freopen("ce.txt", "w", stdout);//record copmile error
+        freopen("ce.txt", "w", stderr);//record copmile error
         
         switch (lang){
         case LangC:
