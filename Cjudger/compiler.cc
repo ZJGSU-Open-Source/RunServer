@@ -50,6 +50,8 @@ int main(int argc, char** argv){
         LIM.rlim_max = 30;
         LIM.rlim_cur = 30;
         setrlimit(RLIMIT_CPU, &LIM); //编译最长时间30s
+        alarm(0);
+        alarm(30);
 
         LIM.rlim_max = 900 * STD_MB;
         LIM.rlim_cur = 900 * STD_MB;
