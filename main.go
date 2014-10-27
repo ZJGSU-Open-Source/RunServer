@@ -133,6 +133,7 @@ func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (sim, Sim_
 	}
 	qry := make(map[string]string)
 	qry["pid"] = strconv.Itoa(pro.Pid)
+	qry["action"] = "solve"
 
 	solutionModel := model.SolutionModel{}
 	list, err := solutionModel.List(qry)
@@ -185,6 +186,7 @@ func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (sim, Sim_
 		defer simfile.Close()
 
 		fmt.Fscanf(simfile, "%d %d", &sim, &Sim_s_id)
+		os.Remove("./sim")
 	}
 	return sim, Sim_s_id
 }
