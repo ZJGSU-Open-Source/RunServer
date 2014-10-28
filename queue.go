@@ -90,7 +90,7 @@ func JudgeForever() {
 	for {
 		if SyncControll.IsEmpty() == false {
 			info := SyncControll.GetFrontAndRemove()
-			judgeOne(*info)
+			go judgeOne(*info) //并行判题
 		}
 		time.Sleep(1 * time.Second)
 	}
