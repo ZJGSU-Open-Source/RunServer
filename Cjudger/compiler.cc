@@ -1,3 +1,30 @@
+//
+// File:   compiler.cc
+// Author: sempr
+// refacted by sakeven
+/*
+ * Copyright 2008 sempr <iamsempr@gmail.com>
+ *
+ * Refacted and modified by sakeven<jc5930@sina.cn>
+ * Bug report email jc5930@sina.cn
+ *
+ *
+ * This file is part of RunServer.
+ *
+ * RunServer is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * RunServer is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with RunServer. if not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,7 +34,6 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <sys/wait.h>
-// #include <sys/ptrace.h>
 #include <sys/types.h>
 #include <sys/user.h>
 #include <sys/syscall.h>
@@ -19,7 +45,7 @@
 
 #include "config.h"
 
-int main(int argc, char** argv){
+int main(int argc, char* argv[]){
     int pid;
 
     int lang = atoi(argv[1]);
@@ -35,26 +61,17 @@ int main(int argc, char** argv){
                           };
 	const char * CP_J[] = { "javac", "-J-Xms32m", "-J-Xmx256m", "Main.java",NULL };
 
-    //char javac_buf[4][16];
-    //char *CP_J[5];
-    // for(int i=0; i<4; i++) CP_J[i]=javac_buf[i];
-    // sprintf(CP_J[0],"javac");
-    // sprintf(CP_J[1],"-J%s",java_xms);
-    // sprintf(CP_J[2],"-J%s",java_xmx);
-    // sprintf(CP_J[3],"Main.java");
-    //CP_J[4]=(char *)NULL;
-
     pid = fork();
     if (pid == 0){
         struct rlimit LIM;
         LIM.rlim_max = 30;
         LIM.rlim_cur = 30;
-        setrlimit(RLIMIT_CPU, &LIM); //编译最长时间30s
+        setrlimit(RLIMIT_CPU, &LIM); //longest compilation time is 30s.
         alarm(0);
         alarm(30);
 
-        LIM.rlim_max = 900 * STD_MB;
-        LIM.rlim_cur = 900 * STD_MB;
+        LIM.rlim_max = 100 * STD_MB;
+        LIM.rlim_cur = 100 * STD_MB;
         setrlimit(RLIMIT_FSIZE, &LIM);
 
         LIM.rlim_max =  STD_MB<<11;

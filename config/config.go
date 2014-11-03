@@ -1,6 +1,6 @@
 package config
 
-var PostHost = "http://127.0.0.1:8080"
+const PostHost = "http://127.0.0.1:8080"
 
 const (
 	JudgePD  = 0  //Pending
@@ -29,3 +29,5 @@ const (
 	ModuleC  = 2 //Contest
 	ModuleE  = 3 //Exercise
 )
+
+const ProblemDataPath = ""
