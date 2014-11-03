@@ -135,7 +135,7 @@ func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (sim, Sim_
 	}
 	qry := make(map[string]string)
 	qry["pid"] = strconv.Itoa(pro.Pid)
-	qry["action"] = "solve"
+	qry["solve"]=config.JudegAC
 
 	solutionModel := model.SolutionModel{}
 	list, err := solutionModel.List(qry)
