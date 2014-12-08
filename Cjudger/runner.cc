@@ -1,7 +1,29 @@
-//This file is forked from https://github.com/siqiaochen/oj_client_hustoj/
-//It hasn't been tested, so don't use it in your OJ.
-//This file is in golang format, so please don't change anything.
 //
+// File:   runner.cc
+// Author: sempr
+// refacted by sakeven
+/*
+ * Copyright 2008 sempr <iamsempr@gmail.com>
+ *
+ * Refacted and modified by sakeven<jc5930@sina.cn>
+ * Bug report email jc5930@sina.cn
+ *
+ *
+ * This file is part of RunServer.
+ *
+ * RunServer is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * RunServer is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with RunServer. if not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -150,26 +172,6 @@ void find_next_nonspace(int & c1, int & c2, FILE *& f1, FILE *& f2, int & ret){
     }
 }
 
-// void make_diff_out(FILE *f1,FILE *f2,int c1,int c2,const char * path)
-// {
-//     FILE *out;
-//     char buf[45];
-//     out=fopen("diff.out","a+");
-//     fprintf(out,"=================%s\n",getFileNameFromPath(path));
-//     fprintf(out,"Right:\n%c",c1);
-//     if(fgets(buf,44,f1))
-//     {
-//         fprintf(out,"%s",buf);
-//     }
-//     fprintf(out,"\n-----------------\n");
-//     fprintf(out,"Your:\n%c",c2);
-//     if(fgets(buf,44,f2))
-//     {
-//         fprintf(out,"%s",buf);
-//     }
-//     fprintf(out,"\n=================\n");
-//     fclose(out);
-// }
 
 /*
  * translated from ZOJ judger r367
@@ -349,36 +351,6 @@ void run_solution(int &lang, char *infile, char *work_dir, int &time_lmt, int &u
     //sleep(1);
     exit(0);
 }
-
-// int fix_java_mis_judge(char *work_dir, int & JudgeFlag, int & topmemory, int mem_lmt){
-//     int comp_res = JudgeAC;
-//     if (DEBUG)
-//         execute_cmd("cat %s/error.out", work_dir);
-//     comp_res = execute_cmd("grep 'java.lang.OutOfMemoryError'  %s/error.out",
-//                            work_dir);
-
-//     if (!comp_res){
-//         printf("JVM need more Memory!");
-//         JudgeFlag = JudgeMLE;
-//         topmemory = mem_lmt * STD_MB;
-//     }
-//     comp_res = execute_cmd("grep 'java.lang.OutOfMemoryError'  %s/user.out",
-//                            work_dir);
-
-//     if (!comp_res){
-//         printf("JVM need more Memory or Threads!");
-//         JudgeFlag = JudgeMLE;
-//         topmemory = mem_lmt * STD_MB;
-//     }
-//     comp_res = execute_cmd("grep 'Could not create'  %s/error.out", work_dir);
-
-//     if (!comp_res){
-//         printf("jvm need more resource,tweak -Xmx(OJ_JAVA_BONUS) Settings");
-//         JudgeFlag = JudgeRE;
-//         //topmemory=0;
-//     }
-//     return comp_res;
-// }
 
 //评判用户solution
 void judge_solution(int & JudgeFlag, int & usedtime, int time_lmt,

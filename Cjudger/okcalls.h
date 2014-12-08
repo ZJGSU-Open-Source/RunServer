@@ -1,21 +1,30 @@
+//
+// File:   okcalls.h
+// Author: sempr
+// refacted by sakeven
 /*
  * Copyright 2008 sempr <iamsempr@gmail.com>
  *
- * This file is part of HUSTOJ.
+ * Refacted and modified by sakeven<jc5930@sina.cn>
+ * Bug report email jc5930@sina.cn
  *
- * HUSTOJ is free software; you can redistribute it and/or modify
+ *
+ * This file is part of RunServer.
+ *
+ * RunServer is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * HUSTOJ is distributed in the hope that it will be useful,
+ * RunServer is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with HUSTOJ. if not, see <http://www.gnu.org/licenses/>.
+ * along with RunServer. if not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <sys/syscall.h>
 #define HOJ_MAX_LIMIT -1
 #ifdef __i386

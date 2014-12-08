@@ -34,9 +34,6 @@ func judgeOne(info Info) {
 
 	cmd := exec.Command("mkdir", "../run/"+strconv.Itoa(sol.Sid))
 	cmd.Run()
-
-	cmd = exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(sol.Pid), "../run/"+strconv.Itoa(sol.Sid))
-	cmd.Run()
 	defer os.RemoveAll("../run/" + strconv.Itoa(sol.Sid))
 
 	workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
@@ -56,6 +53,10 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 		this.Judge = config.JudgeRJ
 		logger.Println("compiler success")
 		this.update()
+
+		cmd = exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(sol.Pid), "../run/"+strconv.Itoa(sol.Sid))
+		cmd.Run()
+
 		this.RunJudge(memoryLimit, timeLimit, workdir)
 	} else {
 		b, err := ioutil.ReadFile(workdir + "/ce.txt")
@@ -134,7 +135,7 @@ func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (sim, Sim_
 	}
 	qry := make(map[string]string)
 	qry["pid"] = strconv.Itoa(pro.Pid)
-	qry["action"] = "solve"
+	qry["solve"]=config.JudegAC
 
 	solutionModel := model.SolutionModel{}
 	list, err := solutionModel.List(qry)

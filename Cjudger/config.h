@@ -1,3 +1,6 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
 #define STD_MB 1048576
 #define STD_T_LIM 2
 #define STD_F_LIM (STD_MB<<5)
@@ -34,4 +37,6 @@ const char *oj_home = "/home/acm/go/src";
 #define REG_ARG0 rdi
 #define REG_ARG1 rsi
 
-#endif
+#endif	//__i386
+
+#endif	//CONFIG_H
