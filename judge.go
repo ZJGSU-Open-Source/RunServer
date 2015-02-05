@@ -2,7 +2,6 @@ package main
 
 import (
 	"GoOnlineJudge/model"
-	"vjudger"
 
 	"RunServer/config"
 	"fmt"
@@ -11,20 +10,6 @@ import (
 	"strconv"
 	"time"
 )
-
-type UserInterface interface {
-	GetResult() int
-	SetResult(int) int
-	SetResource(int, int, int)
-	SetErrorInfo(string)
-	GetSubmitTime() time.Time
-	SetSubmitTime(time.Time)
-	GetCode() string
-	GetOJ() string
-	GetLang() int
-	GetVid() int
-	UpdateSolution()
-}
 
 type solution struct {
 	Vid        int
@@ -75,9 +60,13 @@ func (s *solution) GetVid() int {
 	return s.Vid
 }
 
+func (s *solution) GetSid() int {
+	return s.Sid
+}
+
 func judgeOne(info Info) {
 	logger.Println(info)
-	user := &vjudger.User{}
+	user := &solution{}
 
 	solutionModel := model.SolutionModel{}
 	solutionID, err := strconv.Atoi(strconv.Itoa(info.Sid))
@@ -225,7 +214,7 @@ func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (sim, Sim_
 	return sim, Sim_s_id
 }
 
-//update 更新判题结果
+//UpdateSolution 更新判题结果
 func (this *solution) UpdateSolution() {
 	sid, err := strconv.Atoi(strconv.Itoa(this.Sid))
 

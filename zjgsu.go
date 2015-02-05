@@ -22,14 +22,14 @@ type ZJGSUJudger struct {
 	mem     int
 } //ZJGSUJudger implements vjudger.Vjudger interface.
 
-func (z *ZJGSUJudger) Init(user *vjudger.User) error {
+func (z *ZJGSUJudger) Init(user vjudger.UserInterface) error {
 	z.token = "ZJGSU"
 
-	cmd := exec.Command("mkdir", "../run/"+strconv.Itoa(user.Sid))
+	cmd := exec.Command("mkdir", "../run/"+strconv.Itoa(user.GetSid()))
 	cmd.Run()
-	defer os.RemoveAll("../run/" + strconv.Itoa(user.Sid))
+	defer os.RemoveAll("../run/" + strconv.Itoa(user.GetSid()))
 
-	z.workdir = "../run/" + strconv.Itoa(user.Sid) + "/" + strconv.Itoa(user.Vid)
+	z.workdir = "../run/" + strconv.Itoa(user.GetSid()) + "/" + strconv.Itoa(user.GetVid())
 	logger.Println("workdir is ", z.workdir)
 
 	z.files(user, z.workdir)
@@ -44,18 +44,18 @@ func (z *ZJGSUJudger) Match(token string) bool {
 }
 
 //Get problem Info
-func (z *ZJGSUJudger) Login(user *vjudger.User) error {
+func (z *ZJGSUJudger) Login(user vjudger.UserInterface) error {
 	proModel := &model.ProblemModel{}
-	pro, _ := proModel.Detail(user.Vid)
+	pro, _ := proModel.Detail(user.GetVid())
 	z.time = pro.Time
 	z.mem = pro.Memory
 	return nil
 }
 
-func (z *ZJGSUJudger) files(user *vjudger.User, workdir string) {
+func (z *ZJGSUJudger) files(user vjudger.UserInterface, workdir string) {
 	var codefilename string
 
-	switch user.Lang {
+	switch user.GetLang() {
 	case config.LanguageC:
 		codefilename = workdir + "/Main.c"
 	case config.LanguageCPP:
@@ -67,59 +67,70 @@ func (z *ZJGSUJudger) files(user *vjudger.User, workdir string) {
 	codefile, err := os.Create(codefilename)
 	defer codefile.Close()
 
-	_, err = codefile.WriteString(user.Code)
+	_, err = codefile.WriteString(user.GetCode())
 	if err != nil {
 		logger.Println("source code writing to file failed")
 	}
 }
 
-func (z *ZJGSUJudger) Submit(user *vjudger.User) error {
+func (z *ZJGSUJudger) Submit(user vjudger.UserInterface) error {
 	z.compile(user)
-	if user.Result != config.JudgeCE {
-		user.Result = config.JudgeRJ
+	if user.GetResult() != config.JudgeCE {
+		user.SetResult(config.JudgeRJ)
 		logger.Println("compiler success")
 		user.UpdateSolution()
 
-		cmd := exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(user.Vid), "../run/"+strconv.Itoa(user.Sid))
+		cmd := exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(user.GetVid()), "../run/"+strconv.Itoa(user.GetSid()))
 		cmd.Run()
 	} else {
 		b, err := ioutil.ReadFile(z.workdir + "/ce.txt")
 		if err != nil {
 			logger.Println(err)
 		}
-		user.CE = string(b)
+		user.SetErrorInfo(string(b))
 		logger.Println("compiler error")
 		return ErrCompile
 	}
 	return nil
 }
 
-func (z *ZJGSUJudger) GetStatus(user *vjudger.User) {
+func (z *ZJGSUJudger) GetStatus(user vjudger.UserInterface) error {
 	logger.Println("run solution")
 
 	var out bytes.Buffer
-	cmd := exec.Command("./runner", strconv.Itoa(user.Vid), strconv.Itoa(user.Lang), strconv.Itoa(z.time), strconv.Itoa(z.mem), z.workdir)
+	cmd := exec.Command("./runner", strconv.Itoa(user.GetVid()), strconv.Itoa(user.GetLang()), strconv.Itoa(z.time), strconv.Itoa(z.mem), z.workdir)
 	cmd.Stdout = &out
 	cmd.Run()
 
 	sp := strings.Split(out.String(), " ")
 	var err error
-	user.Result, err = strconv.Atoi(sp[0])
+	Result, err := strconv.Atoi(sp[0])
 	if err != nil {
 		logger.Println(err)
-		logger.Println(user.Result)
+		logger.Println(Result)
 	}
-	user.Time, _ = strconv.Atoi(sp[1])
-	user.Mem, _ = strconv.Atoi(sp[2])
-	user.Mem = user.Mem / 1024 //b->Kb
-	logger.Println(user.Time, "ms")
-	logger.Println(user.Mem, "Kb")
+	user.SetResult(Result)
+	Time, _ := strconv.Atoi(sp[1])
+	Mem, _ := strconv.Atoi(sp[2])
+	Mem = Mem / 1024 //b->Kb
+	user.SetResource(Time, Mem, len(user.GetCode()))
+	return nil
 }
 
-func (z *ZJGSUJudger) compile(user *vjudger.User) {
-	cmd := exec.Command("./compiler", strconv.Itoa(user.Lang), z.workdir)
+func (z *ZJGSUJudger) Run(u vjudger.UserInterface) error {
+	for _, apply := range []func(vjudger.UserInterface) error{z.Init, z.Login, z.Submit, z.GetStatus} {
+		if err := apply(u); err != nil {
+			logger.Println(err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (z *ZJGSUJudger) compile(user vjudger.UserInterface) {
+	cmd := exec.Command("./compiler", strconv.Itoa(user.GetLang()), z.workdir)
 	cmd.Run()
 	if cmd.ProcessState.String() != "exit status 0" {
-		user.Result = config.JudgeCE //compiler error
+		user.SetResult(config.JudgeCE) //compiler error
 	}
 }
