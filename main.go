@@ -54,7 +54,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		log.Println("load json err")
 		return
 	}
-	logger.Printf("Sid %v, Problem Memory %v, Problem Time %v,Rejudge %v\n", info.Sid, info.Memory, info.Time, info.Rejudge)
+	logger.Printf("Sid %v, Rejudge %v\n", info.Sid, info.Rejudge)
 	SyncControll.AddQueue(info)
 }
 
@@ -66,8 +66,7 @@ func LoadJson(r io.Reader, v interface{}) (err error) {
 //Info 判题必须信息
 type Info struct {
 	Sid     int
-	Time    int
-	Memory  int
+	Pid     int
 	Rejudge bool
 }
 

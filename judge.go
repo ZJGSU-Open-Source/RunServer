@@ -2,22 +2,82 @@ package main
 
 import (
 	"GoOnlineJudge/model"
+	"vjudger"
+
 	"RunServer/config"
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
+	"time"
 )
 
+type UserInterface interface {
+	GetResult() int
+	SetResult(int) int
+	SetResource(int, int, int)
+	SetErrorInfo(string)
+	GetSubmitTime() time.Time
+	SetSubmitTime(time.Time)
+	GetCode() string
+	GetOJ() string
+	GetLang() int
+	GetVid() int
+	UpdateSolution()
+}
+
 type solution struct {
+	Vid        int
+	OJ         string
+	SubmitTime time.Time
 	model.Solution
+}
+
+func (s *solution) GetResult() int {
+	return s.Judge
+}
+
+func (s *solution) SetResult(result int) {
+	s.Judge = result
+}
+
+func (s *solution) SetResource(time int, Mem int, length int) {
+	s.Time = time
+	s.Memory = Mem
+	s.Length = length
+}
+
+func (s *solution) SetErrorInfo(text string) {
+	s.Error = text
+}
+
+func (s *solution) GetSubmitTime() time.Time {
+	return s.SubmitTime
+}
+
+func (s *solution) SetSubmitTime(submitTime time.Time) {
+	s.SubmitTime = submitTime
+}
+
+func (s *solution) GetCode() string {
+	return s.Code
+}
+
+func (s *solution) GetOJ() string {
+	return s.OJ
+}
+
+func (s *solution) GetLang() int {
+	return s.Language
+}
+
+func (s *solution) GetVid() int {
+	return s.Vid
 }
 
 func judgeOne(info Info) {
 	logger.Println(info)
+	user := &vjudger.User{}
 
 	solutionModel := model.SolutionModel{}
 	solutionID, err := strconv.Atoi(strconv.Itoa(info.Sid))
@@ -32,40 +92,12 @@ func judgeOne(info Info) {
 		return
 	}
 
-	cmd := exec.Command("mkdir", "../run/"+strconv.Itoa(sol.Sid))
-	cmd.Run()
-	defer os.RemoveAll("../run/" + strconv.Itoa(sol.Sid))
-
-	workdir := "../run/" + strconv.Itoa(sol.Sid) + "/" + strconv.Itoa(sol.Pid)
-	logger.Println("workdir is ", workdir)
-
-	one := &solution{}
-
-	one.Solution = *sol
-	one.files(workdir)
-
-	one.judge(info.Memory, info.Time, info.Rejudge, workdir)
+	user.Uid = sol.Uid
+	user.Sid = sol.Sid
+	user.Vid = info.Pid
 }
 
 func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir string) {
-	this.compile(workdir)
-	if this.Judge != config.JudgeCE {
-		this.Judge = config.JudgeRJ
-		logger.Println("compiler success")
-		this.update()
-
-		cmd := exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(this.Pid), "../run/"+strconv.Itoa(this.Sid))
-		cmd.Run()
-
-		this.RunJudge(memoryLimit, timeLimit, workdir)
-	} else {
-		b, err := ioutil.ReadFile(workdir + "/ce.txt")
-		if err != nil {
-			logger.Println(err)
-		}
-		this.Error = string(b)
-		logger.Println("compiler error")
-	}
 
 	var sim, Sim_s_id int
 
@@ -76,7 +108,7 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 	this.Sim = sim
 	this.Sim_s_id = Sim_s_id
 
-	this.update()
+	this.UpdateSolution()
 
 	solutionModel := model.SolutionModel{}
 	qry := make(map[string]string)
@@ -193,59 +225,8 @@ func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (sim, Sim_
 	return sim, Sim_s_id
 }
 
-func (this *solution) compile(workdir string) {
-	cmd := exec.Command("./compiler", strconv.Itoa(this.Language), workdir)
-	cmd.Run()
-	if cmd.ProcessState.String() != "exit status 0" {
-		this.Judge = config.JudgeCE //compiler error
-	}
-}
-
-func (this *solution) files(workdir string) {
-	//begin write code to file
-	var codefilename string
-	if this.Language == config.LanguageC {
-		codefilename = workdir + "/Main.c"
-	} else if this.Language == config.LanguageCPP {
-		codefilename = workdir + "/Main.cc"
-	} else if this.Language == config.LanguageJAVA {
-		codefilename = workdir + "/Main.java"
-	}
-
-	codefile, err := os.Create(codefilename)
-	defer codefile.Close()
-
-	_, err = codefile.WriteString(this.Code)
-	if err != nil {
-		logger.Println("source code writing to file failed")
-	}
-	//end write code to file
-}
-
-func (this *solution) RunJudge(memorylimit, timelimit int, workdir string) {
-	logger.Println("run solution")
-
-	var out bytes.Buffer
-	cmd := exec.Command("./runner", strconv.Itoa(this.Pid), strconv.Itoa(this.Language), strconv.Itoa(timelimit), strconv.Itoa(memorylimit), workdir)
-	cmd.Stdout = &out
-	cmd.Run()
-
-	sp := strings.Split(out.String(), " ")
-	var err error
-	this.Judge, err = strconv.Atoi(sp[0])
-	if err != nil {
-		logger.Println(err)
-		logger.Println(this.Judge)
-	}
-	this.Time, _ = strconv.Atoi(sp[1])
-	this.Memory, _ = strconv.Atoi(sp[2])
-	this.Memory = this.Memory / (1024 * 8) //b->KB
-	logger.Println(this.Time, "ms")
-	logger.Println(this.Memory, "kB")
-}
-
 //update 更新判题结果
-func (this *solution) update() {
+func (this *solution) UpdateSolution() {
 	sid, err := strconv.Atoi(strconv.Itoa(this.Sid))
 
 	solutionModel := model.SolutionModel{}
