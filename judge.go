@@ -64,41 +64,36 @@ func (s *solution) GetSid() int {
 	return s.Sid
 }
 
-func judgeOne(info Info) {
+func (s *solution) Init(info Info) {
 	logger.Println(info)
-	user := &solution{}
 
 	solutionModel := model.SolutionModel{}
-	solutionID, err := strconv.Atoi(strconv.Itoa(info.Sid))
+	sol, err := solutionModel.Detail(info.Sid)
 	if err != nil {
 		logger.Println(err)
 		return
 	}
 
-	sol, err := solutionModel.Detail(solutionID)
-	if err != nil {
-		logger.Println(err)
-		return
-	}
-
-	user.Uid = sol.Uid
-	user.Sid = sol.Sid
-	user.Vid = info.Pid
+	s.Uid = sol.Uid
+	s.Sid = sol.Sid
+	s.Vid = info.Pid
 }
 
-func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir string) {
+func (this *solution) UpdateSim() {
 
 	var sim, Sim_s_id int
 
 	if this.Judge == config.JudgeAC && this.Module >= config.ModuleC { //当为练习或竞赛时检测
-		sim, Sim_s_id = this.get_sim(this.Sid, this.Language, this.Pid, workdir)
+		sim, Sim_s_id = this.get_sim(this.Sid, this.Language, this.Pid)
 	}
 
 	this.Sim = sim
 	this.Sim_s_id = Sim_s_id
 
 	this.UpdateSolution()
+}
 
+func (this *solution) UpdateRecord() {
 	solutionModel := model.SolutionModel{}
 	qry := make(map[string]string)
 	qry["module"] = strconv.Itoa(config.ModuleP)
@@ -137,7 +132,7 @@ func (this *solution) judge(memoryLimit, timeLimit int, rejudge bool, workdir st
 }
 
 //get_sim 相似度检测，返回值为相似度和相似的id
-func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (sim, Sim_s_id int) {
+func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
 	var extension string
 	if this.Language == config.LanguageC {
 		extension = "c"
@@ -160,8 +155,8 @@ func (this *solution) get_sim(Sid, Language, Pid int, workdir string) (sim, Sim_
 
 	solutionModel := model.SolutionModel{}
 	list, err := solutionModel.List(qry)
-
-	sim_test_dir := workdir + "/../sim_test"
+	workdir := "../run/" + strconv.Itoa(this.Sid)
+	sim_test_dir := workdir + "/sim_test"
 	cmd := exec.Command("mkdir", sim_test_dir)
 	cmd.Run()
 

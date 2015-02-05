@@ -18,6 +18,8 @@
 package main
 
 import (
+	"vjudger"
+
 	"container/list"
 	"encoding/json"
 	"io"
@@ -106,8 +108,23 @@ func JudgeForever() {
 	for {
 		if SyncControll.IsEmpty() == false {
 			info := SyncControll.GetFrontAndRemove()
-			go judgeOne(*info) //并行判题
+			go Judge(*info) //并行判题
 		}
 		time.Sleep(1 * time.Second)
 	}
+}
+
+var VJs = []vjudger.Vjudger{&ZJGSUJudger{}, &vjudger.HDUJudger{}}
+
+func Judge(info Info) {
+	uesr := &solution{}
+	uesr.Init(info)
+	for _, vj := range VJs {
+		if vj.Match(uesr.GetOJ()) { //init?match
+			vj.Run(uesr)
+			break
+		}
+	}
+	uesr.UpdateSim()
+	uesr.UpdateRecord()
 }
