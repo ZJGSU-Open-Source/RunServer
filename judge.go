@@ -73,9 +73,9 @@ func (s *solution) Init(info Info) {
 		logger.Println(err)
 		return
 	}
+	s.Solution = *sol
 
-	s.Uid = sol.Uid
-	s.Sid = sol.Sid
+	s.OJ = info.OJ
 	s.Vid = info.Pid
 }
 

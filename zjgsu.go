@@ -46,6 +46,7 @@ func (z *ZJGSUJudger) Match(token string) bool {
 //Get problem Info
 func (z *ZJGSUJudger) Login(user vjudger.UserInterface) error {
 	proModel := &model.ProblemModel{}
+	logger.Println(user.GetVid())
 	pro, _ := proModel.Detail(user.GetVid())
 	z.time = pro.Time
 	z.mem = pro.Memory

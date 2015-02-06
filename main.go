@@ -69,6 +69,7 @@ func LoadJson(r io.Reader, v interface{}) (err error) {
 type Info struct {
 	Sid     int
 	Pid     int
+	OJ      string
 	Rejudge bool
 }
 
@@ -120,7 +121,7 @@ func Judge(info Info) {
 	uesr := &solution{}
 	uesr.Init(info)
 	for _, vj := range VJs {
-		if vj.Match(uesr.GetOJ()) { //init?match
+		if vj.Match(uesr.GetOJ()) {
 			vj.Run(uesr)
 			break
 		}
