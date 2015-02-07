@@ -5,6 +5,7 @@ import (
 
 	"RunServer/config"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -64,6 +65,10 @@ func (s *solution) GetSid() int {
 	return s.Sid
 }
 
+func (s *solution) GetPid() int {
+	return s.Pid
+}
+
 func (s *solution) Init(info Info) {
 	logger.Println(info)
 
@@ -83,9 +88,21 @@ func (this *solution) UpdateSim() {
 
 	var sim, Sim_s_id int
 
+	log.Println("Update Sim")
+	log.Println(this.Judge)
+	log.Println("line93")
+
 	if this.Judge == config.JudgeAC && this.Module >= config.ModuleC { //当为练习或竞赛时检测
+		log.Println("line89")
+		log.Println(this.Sid, this.Language, this.Pid)
+		log.Println("line90")
+		log.Println(this.GetSid(), this.GetLang(), this.GetPid())
 		sim, Sim_s_id = this.get_sim(this.Sid, this.Language, this.Pid)
 	}
+
+	log.Println("line91")
+	log.Println(sim)
+	log.Println(Sim_s_id)
 
 	this.Sim = sim
 	this.Sim_s_id = Sim_s_id
@@ -133,6 +150,7 @@ func (this *solution) UpdateRecord() {
 
 //get_sim 相似度检测，返回值为相似度和相似的id
 func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
+	log.Println("get sim")
 	var extension string
 	if this.Language == config.LanguageC {
 		extension = "c"
@@ -143,8 +161,12 @@ func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
 	}
 
 	pid := this.Pid
+	log.Println(pid)
+
 	proModel := model.ProblemModel{}
 	pro, err := proModel.Detail(pid)
+	log.Println(pro)
+
 	if err != nil {
 		logger.Println(err)
 		return
@@ -153,10 +175,15 @@ func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
 	qry["pid"] = strconv.Itoa(pro.Pid)
 	qry["action"] = "solve"
 
+	log.Println(qry)
+
 	solutionModel := model.SolutionModel{}
 	list, err := solutionModel.List(qry)
 	workdir := "../run/" + strconv.Itoa(this.Sid)
 	sim_test_dir := workdir + "/sim_test"
+
+	log.Println(sim_test_dir)
+
 	cmd := exec.Command("mkdir", sim_test_dir)
 	cmd.Run()
 
@@ -221,6 +248,9 @@ func (this *solution) UpdateSolution() {
 	}
 
 	ori.Judge = this.Judge
+	log.Println("judge.go line 251")
+	log.Println(ori.Judge)
+
 	ori.Time = this.Time
 	ori.Memory = this.Memory
 	ori.Sim = this.Sim

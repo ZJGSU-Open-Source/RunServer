@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -37,6 +38,10 @@ func (z *ZJGSUJudger) Init(user vjudger.UserInterface) error {
 }
 
 func (z *ZJGSUJudger) Match(token string) bool {
+	logger.Println(z.token)
+	// z.token is null, because Init() is not been executed,
+	// FYI, Match is before Run in line 131
+
 	if z.token == token || token == "" {
 		return true
 	}
@@ -76,9 +81,12 @@ func (z *ZJGSUJudger) files(user vjudger.UserInterface, workdir string) {
 
 func (z *ZJGSUJudger) Submit(user vjudger.UserInterface) error {
 	z.compile(user)
+	log.Println("zjgsu.go line 80")
+	log.Println(user.GetResult())
+
 	if user.GetResult() != config.JudgeCE {
 		user.SetResult(config.JudgeRJ)
-		logger.Println("compiler success")
+		logger.Println("compile success")
 		user.UpdateSolution()
 
 		cmd := exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(user.GetVid()), "../run/"+strconv.Itoa(user.GetSid()))
@@ -119,6 +127,7 @@ func (z *ZJGSUJudger) GetStatus(user vjudger.UserInterface) error {
 }
 
 func (z *ZJGSUJudger) Run(u vjudger.UserInterface) error {
+	log.Println("ZJGSU Run")
 	for _, apply := range []func(vjudger.UserInterface) error{z.Init, z.Login, z.Submit, z.GetStatus} {
 		if err := apply(u); err != nil {
 			logger.Println(err)

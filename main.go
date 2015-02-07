@@ -45,6 +45,7 @@ func init() {
 func main() {
 	SyncControll = &Sync{}
 	go JudgeForever()
+
 	http.HandleFunc("/", Handler)
 	http.ListenAndServe(":8888", nil)
 }
@@ -57,6 +58,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	logger.Printf("Sid %v, Rejudge %v\n", info.Sid, info.Rejudge)
+
 	SyncControll.AddQueue(info)
 }
 
@@ -118,14 +120,14 @@ func JudgeForever() {
 var VJs = []vjudger.Vjudger{&ZJGSUJudger{}, &vjudger.HDUJudger{}, &vjudger.PKUJudger{}}
 
 func Judge(info Info) {
-	uesr := &solution{}
-	uesr.Init(info)
+	user := &solution{}
+	user.Init(info)
 	for _, vj := range VJs {
-		if vj.Match(uesr.GetOJ()) {
-			vj.Run(uesr)
+		if vj.Match(user.GetOJ()) {
+			vj.Run(user)
 			break
 		}
 	}
-	uesr.UpdateSim()
-	uesr.UpdateRecord()
+	user.UpdateSim()
+	user.UpdateRecord()
 }
