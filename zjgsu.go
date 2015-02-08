@@ -27,12 +27,12 @@ type ZJGSUJudger struct {
 func (z *ZJGSUJudger) Init(user vjudger.UserInterface) error {
 	z.token = ZJGSUToken
 
-	cmd := exec.Command("mkdir", "../run/"+strconv.Itoa(user.GetSid()))
-	cmd.Run()
-	defer os.RemoveAll("../run/" + strconv.Itoa(user.GetSid()))
-
 	z.workdir = "../run/" + strconv.Itoa(user.GetSid()) + "/" + strconv.Itoa(user.GetVid())
 	logger.Println("workdir is ", z.workdir)
+
+	cmd := exec.Command("mkdir", "-p", z.workdir)
+	cmd.Run()
+	defer os.RemoveAll("../run/" + strconv.Itoa(user.GetSid()))
 
 	z.files(user, z.workdir)
 	return nil
@@ -110,6 +110,7 @@ func (z *ZJGSUJudger) GetStatus(user vjudger.UserInterface) error {
 	sp := strings.Split(out.String(), " ")
 	var err error
 	Result, err := strconv.Atoi(sp[0])
+
 	if err != nil {
 		logger.Println(err)
 		logger.Println(Result)

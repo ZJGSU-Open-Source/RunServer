@@ -198,12 +198,13 @@ func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
 			if err != nil {
 				logger.Println("source code writing to file failed")
 			}
-
 			count++
 		}
 	}
 
 	cmd = exec.Command("../RunServer/sim/sim.sh", sim_test_dir, extension)
+	log.Println(sim_test_dir)
+
 	if err = cmd.Run(); err != nil {
 		log.Println(err)
 		return
