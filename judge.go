@@ -88,21 +88,9 @@ func (this *solution) UpdateSim() {
 
 	var sim, Sim_s_id int
 
-	log.Println("Update Sim")
-	log.Println(this.Judge)
-	log.Println("line93")
-
 	if this.Judge == config.JudgeAC && this.Module >= config.ModuleC { //当为练习或竞赛时检测
-		log.Println("line89")
-		log.Println(this.Sid, this.Language, this.Pid)
-		log.Println("line90")
-		log.Println(this.GetSid(), this.GetLang(), this.GetPid())
 		sim, Sim_s_id = this.get_sim(this.Sid, this.Language, this.Pid)
 	}
-
-	log.Println("line91")
-	log.Println(sim)
-	log.Println(Sim_s_id)
 
 	this.Sim = sim
 	this.Sim_s_id = Sim_s_id
@@ -139,7 +127,6 @@ func (this *solution) UpdateRecord() {
 		logger.Println(err)
 	}
 	solve = len(solvelist)
-	logger.Println("solve's:", solve)
 
 	userModel := model.UserModel{}
 	err = userModel.Record(this.Uid, solve, submit)
@@ -150,8 +137,8 @@ func (this *solution) UpdateRecord() {
 
 //get_sim 相似度检测，返回值为相似度和相似的id
 func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
-	log.Println("get sim")
 	var extension string
+
 	if this.Language == config.LanguageC {
 		extension = "c"
 	} else if this.Language == config.LanguageCPP {
@@ -161,31 +148,30 @@ func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
 	}
 
 	pid := this.Pid
-	log.Println(pid)
 
 	proModel := model.ProblemModel{}
 	pro, err := proModel.Detail(pid)
-	log.Println(pro)
-
 	if err != nil {
 		logger.Println(err)
 		return
 	}
+
 	qry := make(map[string]string)
 	qry["pid"] = strconv.Itoa(pro.Pid)
 	qry["action"] = "solve"
-
-	log.Println(qry)
 
 	solutionModel := model.SolutionModel{}
 	list, err := solutionModel.List(qry)
 	workdir := "../run/" + strconv.Itoa(this.Sid)
 	sim_test_dir := workdir + "/sim_test"
 
-	log.Println(sim_test_dir)
-
-	cmd := exec.Command("mkdir", sim_test_dir)
-	cmd.Run()
+	cmd := exec.Command("mkdir", "-p", sim_test_dir)
+	err = cmd.Run()
+	if err != nil {
+		logger.Println(err)
+		return
+	}
+	defer os.RemoveAll(workdir)
 
 	codefile, err := os.Create(sim_test_dir + "/../Main." + extension)
 	defer codefile.Close()
@@ -201,7 +187,7 @@ func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
 
 		solutionModel := model.SolutionModel{}
 		sol, err := solutionModel.Detail(sid)
-
+		log.Println(sid)
 		if sid != this.Sid && err == nil {
 			filepath := sim_test_dir + "/" + strconv.Itoa(sid) + "." + extension
 
@@ -217,11 +203,15 @@ func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
 		}
 	}
 
-	logger.Println(count)
 	cmd = exec.Command("../RunServer/sim/sim.sh", sim_test_dir, extension)
-	cmd.Run()
+	if err = cmd.Run(); err != nil {
+		log.Println(err)
+		return
+	}
+	defer os.Remove("./sim")
 
-	if _, err := os.Stat("./sim"); err == nil {
+	if f, err := os.Stat("./sim"); err == nil {
+		log.Println(f.Name())
 		logger.Println("sim exist")
 		simfile, err := os.Open("./sim")
 		if err != nil {
@@ -231,7 +221,6 @@ func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
 		defer simfile.Close()
 
 		fmt.Fscanf(simfile, "%d %d", &sim, &Sim_s_id)
-		os.Remove("./sim")
 	}
 	return sim, Sim_s_id
 }
@@ -248,9 +237,6 @@ func (this *solution) UpdateSolution() {
 	}
 
 	ori.Judge = this.Judge
-	log.Println("judge.go line 251")
-	log.Println(ori.Judge)
-
 	ori.Time = this.Time
 	ori.Memory = this.Memory
 	ori.Sim = this.Sim
