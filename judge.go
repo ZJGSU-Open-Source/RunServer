@@ -5,7 +5,6 @@ import (
 
 	"RunServer/config"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -187,8 +186,7 @@ func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
 
 		solutionModel := model.SolutionModel{}
 		sol, err := solutionModel.Detail(sid)
-		log.Println(sid)
-		if sid != this.Sid && err == nil {
+		if sid < this.Sid && err == nil {
 			filepath := sim_test_dir + "/" + strconv.Itoa(sid) + "." + extension
 
 			codefile, err := os.Create(filepath)
@@ -203,21 +201,17 @@ func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
 	}
 
 	cmd = exec.Command("../RunServer/sim/sim.sh", sim_test_dir, extension)
-	log.Println(sim_test_dir)
 
 	if err = cmd.Run(); err != nil {
-		log.Println(err)
 		return
 	}
 	defer os.Remove("./sim")
 
-	if f, err := os.Stat("./sim"); err == nil {
-		log.Println(f.Name())
-		logger.Println("sim exist")
+	if _, err := os.Stat("./sim"); err == nil {
 		simfile, err := os.Open("./sim")
 		if err != nil {
 			logger.Println("sim file open error")
-			os.Exit(1)
+			return
 		}
 		defer simfile.Close()
 
