@@ -32,7 +32,6 @@ func (z *ZJGSUJudger) Init(user vjudger.UserInterface) error {
 
 	cmd := exec.Command("mkdir", "-p", z.workdir)
 	cmd.Run()
-	defer os.RemoveAll("../run/" + strconv.Itoa(user.GetSid()))
 
 	z.files(user, z.workdir)
 	return nil
@@ -124,6 +123,8 @@ func (z *ZJGSUJudger) GetStatus(user vjudger.UserInterface) error {
 }
 
 func (z *ZJGSUJudger) Run(u vjudger.UserInterface) error {
+	defer os.RemoveAll("../run/" + strconv.Itoa(u.GetSid()))
+	u.SetResult(config.JudgePD)
 	for _, apply := range []func(vjudger.UserInterface) error{z.Init, z.Login, z.Submit, z.GetStatus} {
 		if err := apply(u); err != nil {
 			logger.Println(err)

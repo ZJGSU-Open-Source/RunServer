@@ -37,7 +37,7 @@ var (
 )
 
 func init() {
-	pf, _ := os.Create("log")
+	pf, _ := os.Create("log/judge.log")
 	logger = log.New(pf, "", log.Lshortfile|log.Ltime|log.Ldate)
 	waittingQueue = list.New()
 }
