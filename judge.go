@@ -87,8 +87,8 @@ func (this *solution) UpdateSim() {
 
 	var sim, Sim_s_id int
 
-	if this.Judge == config.JudgeAC && this.Module >= config.ModuleC { //当为练习或竞赛时检测
-		sim, Sim_s_id = this.get_sim(this.Sid, this.Language, this.Pid)
+	if this.Judge == config.JudgeAC && this.Module == config.ModuleC { //当为练习或竞赛时检测
+		sim, Sim_s_id = this.get_sim(this.Sid, this.Language)
 	}
 
 	this.Sim = sim
@@ -135,7 +135,7 @@ func (this *solution) UpdateRecord() {
 }
 
 //get_sim 相似度检测，返回值为相似度和相似的id
-func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
+func (this *solution) get_sim(Sid, Language int) (sim, Sim_s_id int) {
 	var extension string
 
 	if this.Language == config.LanguageC {
@@ -146,17 +146,17 @@ func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
 		extension = "java"
 	}
 
-	pid := this.Pid
+	// pid := this.Pid
 
-	proModel := model.ProblemModel{}
-	pro, err := proModel.Detail(pid)
-	if err != nil {
-		logger.Println(err)
-		return
-	}
+	// proModel := model.ProblemModel{}
+	// pro, err := proModel.Detail(pid)
+	// if err != nil {
+	// 	logger.Println(err)
+	// 	return
+	// }
 
 	qry := make(map[string]string)
-	qry["pid"] = strconv.Itoa(pro.Pid)
+	qry["pid"] = strconv.Itoa(this.Pid)
 	qry["action"] = "solve"
 
 	solutionModel := model.SolutionModel{}
@@ -181,10 +181,10 @@ func (this *solution) get_sim(Sid, Language, Pid int) (sim, Sim_s_id int) {
 	}
 
 	var count int
+
 	for i := range list {
 		sid := list[i].Sid
 
-		solutionModel := model.SolutionModel{}
 		sol, err := solutionModel.Detail(sid)
 		if sid < this.Sid && err == nil {
 			filepath := sim_test_dir + "/" + strconv.Itoa(sid) + "." + extension
