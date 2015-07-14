@@ -1,5 +1,10 @@
+#!/bin/bash
+
+set -ex
+
 echo Building RunServer
 go build
+
 echo Compiling runner and compiler
 g++ ./Cjudger/runner.cc -o runner
 g++ ./Cjudger/compiler.cc -o compiler

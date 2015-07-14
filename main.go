@@ -18,116 +18,116 @@
 package main
 
 import (
-	"vjudger"
+    "vjudger"
 
-	"container/list"
-	"encoding/json"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"sync"
-	"time"
+    "container/list"
+    "encoding/json"
+    "io"
+    "log"
+    "net/http"
+    "os"
+    "sync"
+    "time"
 )
 
 var (
-	logger        *log.Logger
-	waittingQueue *list.List
-	SyncControll  *Sync
+    logger        *log.Logger
+    waittingQueue *list.List
+    SyncControll  *Sync
 )
 
 func init() {
-	pf, _ := os.Create("log/judge.log")
-	logger = log.New(pf, "", log.Lshortfile|log.Ltime|log.Ldate)
-	waittingQueue = list.New()
+    pf, _ := os.Create("log/judge.log")
+    logger = log.New(pf, "", log.Lshortfile|log.Ltime|log.Ldate)
+    waittingQueue = list.New()
 }
 
 func main() {
-	SyncControll = &Sync{}
-	go JudgeForever()
+    SyncControll = &Sync{}
+    go JudgeForever()
 
-	http.HandleFunc("/", Handler)
-	http.ListenAndServe(":8888", nil)
+    http.HandleFunc("/", Handler)
+    http.ListenAndServe(":8888", nil)
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-	var info = &Info{}
-	err := LoadJson(r.Body, info)
-	if err != nil {
-		log.Println("load json err")
-		return
-	}
-	logger.Printf("Sid %v, Rejudge %v\n", info.Sid, info.Rejudge)
+    var info = &Info{}
+    err := LoadJson(r.Body, info)
+    if err != nil {
+        log.Println("load json err")
+        return
+    }
+    logger.Printf("Sid %v, Rejudge %v\n", info.Sid, info.Rejudge)
 
-	SyncControll.AddQueue(info)
+    SyncControll.AddQueue(info)
 }
 
 func LoadJson(r io.Reader, v interface{}) (err error) {
-	err = json.NewDecoder(r).Decode(v)
-	return
+    err = json.NewDecoder(r).Decode(v)
+    return
 }
 
 //Info 判题必须信息
 type Info struct {
-	Sid     int
-	Pid     int
-	OJ      string
-	Rejudge bool
+    Sid     int
+    Pid     int
+    OJ      string
+    Rejudge bool
 }
 
 // Sync 锁
 type Sync struct {
-	lock sync.Mutex
+    lock sync.Mutex
 }
 
 // 添加到队尾
 func (s *Sync) AddQueue(info *Info) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+    s.lock.Lock()
+    defer s.lock.Unlock()
 
-	waittingQueue.PushBack(info)
+    waittingQueue.PushBack(info)
 }
 
 // 获得并删除队头
 func (s *Sync) GetFrontAndRemove() (info *Info) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+    s.lock.Lock()
+    defer s.lock.Unlock()
 
-	info, _ = waittingQueue.Front().Value.(*Info)
-	waittingQueue.Remove(waittingQueue.Front())
-	return
+    info, _ = waittingQueue.Front().Value.(*Info)
+    waittingQueue.Remove(waittingQueue.Front())
+    return
 }
 
 // 队列是否为空
 func (s *Sync) IsEmpty() bool {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+    s.lock.Lock()
+    defer s.lock.Unlock()
 
-	return waittingQueue.Len() == 0
+    return waittingQueue.Len() == 0
 }
 
 //
 func JudgeForever() {
-	for {
-		if SyncControll.IsEmpty() == false {
-			info := SyncControll.GetFrontAndRemove()
-			go Judge(*info) //并行判题
-		}
-		time.Sleep(1 * time.Second)
-	}
+    for {
+        if SyncControll.IsEmpty() == false {
+            info := SyncControll.GetFrontAndRemove()
+            go Judge(*info) //并行判题
+        }
+        time.Sleep(1 * time.Second)
+    }
 }
 
 var VJs = []vjudger.Vjudger{&ZJGSUJudger{}, &vjudger.HDUJudger{}, &vjudger.PKUJudger{}}
 
 func Judge(info Info) {
-	user := &solution{}
-	user.Init(info)
-	for _, vj := range VJs {
-		if vj.Match(user.GetOJ()) {
-			vj.Run(user)
-			break
-		}
-	}
-	user.UpdateSim()
-	user.UpdateRecord()
+    user := &solution{}
+    user.Init(info)
+    for _, vj := range VJs {
+        if vj.Match(user.GetOJ()) {
+            vj.Run(user)
+            break
+        }
+    }
+    user.UpdateSim()
+    user.UpdateRecord()
 }
