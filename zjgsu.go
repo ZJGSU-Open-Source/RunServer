@@ -28,7 +28,7 @@ type ZJGSUJudger struct {
 func (z *ZJGSUJudger) Init(user vjudger.UserInterface) error {
     z.token = ZJGSUToken
 
-    z.workdir = "../run/" + strconv.Itoa(user.GetSid()) + "/" + strconv.Itoa(user.GetVid())
+    z.workdir = oj_home + "/run/" + strconv.Itoa(user.GetSid()) + "/" + strconv.Itoa(user.GetVid())
     logger.Println("workdir is ", z.workdir)
 
     cmd := exec.Command("mkdir", "-p", z.workdir)
@@ -85,7 +85,7 @@ func (z *ZJGSUJudger) Submit(user vjudger.UserInterface) error {
         logger.Println("compile success")
         user.UpdateSolution()
 
-        cmd := exec.Command("cp", "-r", "../ProblemData/"+strconv.Itoa(user.GetVid()), "../run/"+strconv.Itoa(user.GetSid()))
+        cmd := exec.Command("cp", "-r", oj_home+"/ProblemData/"+strconv.Itoa(user.GetVid()), oj_home+"/run/"+strconv.Itoa(user.GetSid()))
         cmd.Run()
     } else {
         b, err := ioutil.ReadFile(z.workdir + "/ce.txt")
@@ -107,7 +107,7 @@ func (z *ZJGSUJudger) GetStatus(user vjudger.UserInterface) error {
     logger.Println("run solution")
 
     var out bytes.Buffer
-    cmd := exec.Command("./runner", strconv.Itoa(user.GetVid()), strconv.Itoa(user.GetLang()), strconv.Itoa(z.time), strconv.Itoa(z.mem), z.workdir)
+    cmd := exec.Command("runner", strconv.Itoa(user.GetVid()), strconv.Itoa(user.GetLang()), strconv.Itoa(z.time), strconv.Itoa(z.mem), z.workdir)
     cmd.Stdout = &out
     cmd.Run()
 
@@ -128,7 +128,7 @@ func (z *ZJGSUJudger) GetStatus(user vjudger.UserInterface) error {
 }
 
 func (z *ZJGSUJudger) Run(u vjudger.UserInterface) error {
-    defer os.RemoveAll("../run/" + strconv.Itoa(u.GetSid()))
+    defer os.RemoveAll(oj_home + "/run/" + strconv.Itoa(u.GetSid()))
     u.SetResult(config.JudgePD)
     for _, apply := range []func(vjudger.UserInterface) error{z.Init, z.Login, z.Submit, z.GetStatus} {
         if err := apply(u); err != nil {
@@ -140,8 +140,12 @@ func (z *ZJGSUJudger) Run(u vjudger.UserInterface) error {
 }
 
 func (z *ZJGSUJudger) compile(user vjudger.UserInterface) {
-    cmd := exec.Command("./compiler", strconv.Itoa(user.GetLang()), z.workdir)
-    cmd.Run()
+    cmd := exec.Command("compiler", strconv.Itoa(user.GetLang()), z.workdir)
+    err := cmd.Run()
+    if err != nil {
+        log.Println(err)
+    }
+
     if cmd.ProcessState.String() != "exit status 0" {
         log.Println(cmd.ProcessState.String())
         user.SetResult(config.JudgeCE) //compiler error

@@ -34,10 +34,13 @@ var (
     logger        *log.Logger
     waittingQueue *list.List
     SyncControll  *Sync
+    oj_home       string
 )
 
 func init() {
-    pf, _ := os.Create("log/judge.log")
+    oj_home = os.Getenv("OJ_HOME")
+
+    pf, _ := os.Create(oj_home + "log/judge.log")
     logger = log.New(pf, "", log.Lshortfile|log.Ltime|log.Ldate)
     waittingQueue = list.New()
 }
