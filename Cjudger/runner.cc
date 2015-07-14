@@ -55,6 +55,8 @@ static int use_max_time=0;
 //标志：是否记录系统系统调用
 static char record_call = 0;
 
+char oj_home[1024];
+
 static char lang_ext[3][8] = { "c", "cc", "java"};
 
 //get_file_size get the specific file size
@@ -571,7 +573,9 @@ void init_parameters(int argc, char **argv, char *problemId, int &lang, int &tim
     lang = atoi(argv[2]);
     time_lmt = atoi(argv[3]);
     mem_lmt = atoi(argv[4])*1024/STD_MB*8;
-    sprintf(path,"%s",argv[5]);
+    sprintf(path,"%s", argv[5]);
+
+    sprintf(oj_home, "%s/src", getenv("GOPATH"));
 }
 
 //输出用户程序的所用系统调用及调用次数
