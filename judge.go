@@ -5,6 +5,7 @@ import (
 
     "RunServer/config"
     "fmt"
+    "log"
     "os"
     "os/exec"
     "strconv"
@@ -153,6 +154,8 @@ func (this *solution) get_sim(Sid, Language int) (sim, Sim_s_id int) {
     solutionModel := model.SolutionModel{}
     list, err := solutionModel.List(qry)
     workdir := oj_home + "run/" + strconv.Itoa(this.Sid)
+    log.Println(workdir)
+
     sim_test_dir := workdir + "/sim_test"
 
     cmd := exec.Command("mkdir", "-p", sim_test_dir)

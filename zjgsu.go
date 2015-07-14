@@ -31,6 +31,8 @@ func (z *ZJGSUJudger) Init(user vjudger.UserInterface) error {
     z.workdir = oj_home + "/run/" + strconv.Itoa(user.GetSid()) + "/" + strconv.Itoa(user.GetVid())
     logger.Println("workdir is ", z.workdir)
 
+    log.Println(z.workdir)
+
     cmd := exec.Command("mkdir", "-p", z.workdir)
     cmd.Run()
 

@@ -40,9 +40,11 @@ var (
 func init() {
     oj_home = os.Getenv("OJ_HOME")
 
-    pf, _ := os.Create(oj_home + "log/judge.log")
-    logger = log.New(pf, "", log.Lshortfile|log.Ltime|log.Ldate)
+    // pf, _ := os.Create(oj_home + "log/judge.log")
+    logger = log.New(os.Stdout, "", log.Lshortfile|log.Ltime|log.Ldate)
     waittingQueue = list.New()
+
+    log.Println(oj_home)
 }
 
 func main() {
