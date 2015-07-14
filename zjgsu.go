@@ -143,6 +143,7 @@ func (z *ZJGSUJudger) compile(user vjudger.UserInterface) {
     cmd := exec.Command("./compiler", strconv.Itoa(user.GetLang()), z.workdir)
     cmd.Run()
     if cmd.ProcessState.String() != "exit status 0" {
+        log.Println(cmd.ProcessState.String())
         user.SetResult(config.JudgeCE) //compiler error
     }
 }
