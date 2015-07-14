@@ -530,7 +530,7 @@ void watch_solution(pid_t pidApp, char *infile, int &JudgeFlag,
         if (!record_call&&call_counter[reg.REG_SYSCALL] == 0) {   //do not limit JVM syscall for using different JVM
             JudgeFlag = JudgeRE;
             char error[BUFFER_SIZE];
-            sprintf(error,"[ERROR] A Not allowed system call! callid:%ld\n",reg.REG_SYSCALL);
+            sprintf(error,"[ERROR] A Not allowed system call! callid:%llu\n",reg.REG_SYSCALL);
             write_log(error);
             print_runtimeerror(error);
             ptrace(PTRACE_KILL, pidApp, NULL, NULL);

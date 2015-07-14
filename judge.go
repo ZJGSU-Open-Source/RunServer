@@ -146,15 +146,6 @@ func (this *solution) get_sim(Sid, Language int) (sim, Sim_s_id int) {
 		extension = "java"
 	}
 
-	// pid := this.Pid
-
-	// proModel := model.ProblemModel{}
-	// pro, err := proModel.Detail(pid)
-	// if err != nil {
-	// 	logger.Println(err)
-	// 	return
-	// }
-
 	qry := make(map[string]string)
 	qry["pid"] = strconv.Itoa(this.Pid)
 	qry["action"] = "solve"
@@ -208,7 +199,9 @@ func (this *solution) get_sim(Sid, Language int) (sim, Sim_s_id int) {
 	defer os.Remove("./sim")
 
 	if _, err := os.Stat("./sim"); err == nil {
+
 		simfile, err := os.Open("./sim")
+
 		if err != nil {
 			logger.Println("sim file open error")
 			return
