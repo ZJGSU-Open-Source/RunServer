@@ -4,7 +4,7 @@ FILE="$1/../Main.$EXTENSION"
 
 for i in $(ls -v $1/*.$EXTENSION)
 do 
-	sim=`../RunServer/sim/sim_text -p -e -s $FILE $i | grep ^"$FILE" | awk '{print $4}'`
+	sim=`$OJ_HOME/RunServer/sim/sim_text -p -e -s $FILE $i | grep ^"$FILE" | awk '{print $4}'`
 	if [ ! -z $sim ] && [ $sim -gt 50 ]
 	then 
 		sim_s_id=`basename $i | cut -d'.' -f1`
