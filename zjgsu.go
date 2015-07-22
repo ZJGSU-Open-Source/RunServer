@@ -88,7 +88,10 @@ func (z *ZJGSUJudger) Submit(user vjudger.UserInterface) error {
         user.UpdateSolution()
 
         cmd := exec.Command("cp", "-r", oj_home+"/ProblemData/"+strconv.Itoa(user.GetVid()), oj_home+"/run/"+strconv.Itoa(user.GetSid()))
-        cmd.Run()
+        err := cmd.Run()
+        if err != nil {
+            log.Println(err)
+        }
     } else {
         b, err := ioutil.ReadFile(z.workdir + "/ce.txt")
         if err != nil {

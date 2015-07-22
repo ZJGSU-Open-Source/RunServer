@@ -575,7 +575,7 @@ void init_parameters(int argc, char **argv, char *problemId, int &lang, int &tim
     mem_lmt = atoi(argv[4])*1024/STD_MB*8;
     sprintf(path,"%s", argv[5]);
 
-    sprintf(oj_home, "%s/src", getenv("GOPATH"));
+    sprintf(oj_home, "%s", getenv("oj_home"));
 }
 
 //输出用户程序的所用系统调用及调用次数
