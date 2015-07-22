@@ -16,4 +16,4 @@ make binaries
 cp sim_c sim_java sim_text ../
 make fresh
 
-echo Success, please go to ../GoOnlineJudge/ and run ./RunServer
+echo Success
