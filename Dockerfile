@@ -13,6 +13,7 @@ RUN \
 ADD . $GOPATH/src/RunServer
 
 RUN git clone https://github.com/ZJGSU-Open-Source/vjudger.git $GOPATH/src/vjudger
+git clone https://github.com/ZJGSU-Open-Source/GoOnlineJudge.git $GOPATH/src/GoOnlineJudge
 RUN go get -t RunServer
 
 # Build OJ
