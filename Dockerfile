@@ -11,6 +11,8 @@ RUN \
 
 
 ADD . $GOPATH/src/RunServer
+
+RUN git clone https://github.com/ZJGSU-Open-Source/vjudger.git $GOPATH/src/vjudger
 RUN go get -t RunServer
 
 # Build OJ
