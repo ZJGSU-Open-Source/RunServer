@@ -14,6 +14,7 @@ ADD . $GOPATH/src/RunServer
 
 RUN git clone https://github.com/ZJGSU-Open-Source/vjudger.git $GOPATH/src/vjudger
 RUN git clone https://github.com/ZJGSU-Open-Source/GoOnlineJudge.git $GOPATH/src/GoOnlineJudge
+RUN git clone https://github.com/sakeven/restweb.git $GOPATH/src/restweb
 RUN go get -t RunServer
 
 # Build OJ
