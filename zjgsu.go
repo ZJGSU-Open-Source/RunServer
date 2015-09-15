@@ -112,7 +112,7 @@ func (z *ZJGSUJudger) GetStatus(user vjudger.UserInterface) error {
 	logger.Println("run solution")
 
 	var out bytes.Buffer
-	cmd := exec.Command("runner", strconv.Itoa(user.GetVid()), strconv.Itoa(user.GetLang()), strconv.Itoa(z.time), strconv.Itoa(z.mem), z.workdir)
+	cmd := exec.Command("runner", strconv.Itoa(user.GetLang()), strconv.Itoa(z.time), strconv.Itoa(z.mem), z.workdir)
 	cmd.Stdout = &out
 	cmd.Run()
 
