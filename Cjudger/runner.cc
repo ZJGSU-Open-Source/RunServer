@@ -49,17 +49,15 @@
 
 const int DEBUG = 0;
 
-static int use_max_time=0;
-
 //record system call
 //标志：是否记录系统系统调用
 static char record_call = 0;
 
-char oj_home[1024];
+char work_dir[1024];
 
 static char lang_ext[3][8] = { "c", "cc", "java"};
+static int time_lmt = 5, mem_lmt = 128, lang;//单位是second and MB
 
-//get_file_size get the specific file size
 //获取文件大小
 long get_file_size(const char * filename){
     struct stat f_stat;
@@ -69,23 +67,21 @@ long get_file_size(const char * filename){
     return (long) f_stat.st_size;
 }
 
-//write_log write log to file oj_home/log/client.log
 //将log信息写入oj_home/log/client.log文件
 void write_log(const char *fmt, ...){
     va_list ap;
     char buffer[4096];
-    sprintf(buffer,"%s/log/client.log",oj_home);
+    sprintf(buffer,"%s/client.log", getenv("LOG_PATH"));
+    
     FILE *fp = fopen(buffer, "a+");
     if (fp == NULL){
         fprintf(stderr, "openfile error!\n");
-        system("pwd");
     }
+    
     va_start(ap, fmt);
-
     vsprintf(buffer, fmt, ap);
     fprintf(fp, "%s\n", buffer);
-    if (DEBUG)
-        printf("%s\n", buffer);
+    
     va_end(ap);
     fclose(fp);
 }
@@ -93,10 +89,10 @@ void write_log(const char *fmt, ...){
 //执行命令
 int execute_cmd(const char * fmt, ...){
     char cmd[BUFFER_SIZE];
-
+    
     int ret = 0;
     va_list ap;
-
+    
     va_start(ap, fmt);
     vsprintf(cmd, fmt, ap);
     ret = system(cmd);
@@ -107,7 +103,7 @@ int execute_cmd(const char * fmt, ...){
 const int call_array_size=512;
 int call_counter[call_array_size]= {0};
 static char LANG_NAME[BUFFER_SIZE];
-//init_syscalls_limits
+
 //初始化系统调用限制表
 void init_syscalls_limits(int lang){
     int i;
@@ -115,7 +111,7 @@ void init_syscalls_limits(int lang){
     if (DEBUG){
         write_log("init_call_counter:%d", lang);
     }
-
+    
     if (record_call){   // C & C++
         for (i = 0; i<call_array_size; i++){
             call_counter[i] = 0;
@@ -130,16 +126,7 @@ void init_syscalls_limits(int lang){
     }
 }
 
-//isInFile cheeck whether the filename ends with suffix ".in"
-//检查文件后缀是否为".in"
-int isInFile(const char fname[]){
-    int l = strlen(fname);
-    if (l <= 3 || strcmp(fname + l - 3, ".in") != 0){
-        return 0;
-    }else{
-        return l - 3;
-    }
-}
+
 
 void find_next_nonspace(int & c1, int & c2, FILE *& f1, FILE *& f2, int & ret){
     // Find the next non-space character or \n.
@@ -160,9 +147,6 @@ void find_next_nonspace(int & c1, int & c2, FILE *& f1, FILE *& f2, int & ret){
             }else if ((c2 == '\r' && c1 == '\n')){
                 c2 = fgetc(f2);
             }else{
-                if (DEBUG){
-                    printf("%d=%c\t%d=%c", c1, c1, c2, c2);
-                }
                 ret = JudgePE;
             }
         }
@@ -180,7 +164,7 @@ void find_next_nonspace(int & c1, int & c2, FILE *& f1, FILE *& f2, int & ret){
  * http://code.google.com/p/zoj/source/browse/trunk/judge_client/client/text_checker.cc#25
  *
  */
- //比较用户输出和标准数据
+//比较用户输出和标准数据
 int compare(const char *file1, const char *file2)
 {
     int ret = JudgeAC;
@@ -233,7 +217,7 @@ int compare(const char *file1, const char *file2)
                     ret = JudgeWA;
                     goto end;
                 }
-
+                
                 if ((c1 == '\n' || !c1) && (c2 == '\n' || !c2))
                 {
                     break;
@@ -250,32 +234,14 @@ end:
 }
 
 
-
-//获取命令输出
-FILE * read_cmd_output(const char * fmt, ...){
-    char cmd[BUFFER_SIZE];
-
-    FILE *  ret =NULL;
-    va_list ap;
-
-    va_start(ap, fmt);
-    vsprintf(cmd, fmt, ap);
-    va_end(ap);
-    if(DEBUG){
-    	printf("%s\n",cmd);
-    }
-    ret = popen(cmd,"r");
-
-    return ret;
-}
-
-
 //获取进程状态
 int get_proc_status(int pid, const char * mark){
     FILE * pf;
     char fn[BUFFER_SIZE], buf[BUFFER_SIZE];
     int ret = 0;
+    
     sprintf(fn, "/proc/%d/status", pid);
+    
     pf = fopen(fn, "r");
     int m = strlen(mark);
     while (pf && fgets(buf, BUFFER_SIZE - 1, pf)){
@@ -284,16 +250,18 @@ int get_proc_status(int pid, const char * mark){
             sscanf(buf + m + 1, "%d", &ret);
         }
     }
+    
     if(pf){
         fclose(pf);
     }
+    
     return ret;
 }
 
 //运行编译后的程序
-void run_solution(int &lang, char *infile, char *work_dir, int &time_lmt, int &usedtime, int &mem_lmt){
+void run_solution(char *infile, int &usedtime){
     nice(19);
-   
+    
     // open the files
     freopen(infile, "r", stdin);
     freopen("user.out", "w", stdout);
@@ -302,21 +270,21 @@ void run_solution(int &lang, char *infile, char *work_dir, int &time_lmt, int &u
         printf("%s\n", infile);
     }
     // run me
-     if (lang != LangJava){
-         chroot(work_dir);
-     }
-
+    if (lang != LangJava){
+        chroot(work_dir);
+    }
+    
     
     struct rlimit LIM; // time limit, file limit& memory limit
     // time limit
-
+    
     LIM.rlim_cur = (time_lmt - usedtime / 1000) + 1;
     LIM.rlim_max = LIM.rlim_cur;
-    //if(DEBUG) printf("LIM_CPU=%d",(int)(LIM.rlim_cur));
+
     setrlimit(RLIMIT_CPU, &LIM);
     alarm(0);
     alarm(time_lmt*10);
-
+    
     // file limit
     LIM.rlim_max = STD_F_LIM + STD_MB;
     LIM.rlim_cur = STD_F_LIM;
@@ -328,9 +296,9 @@ void run_solution(int &lang, char *infile, char *work_dir, int &time_lmt, int &u
     }else{
         LIM.rlim_cur=LIM.rlim_max = 1;
     }
-
+    
     setrlimit(RLIMIT_NPROC, &LIM);
-
+    
     // set the stack
     LIM.rlim_cur = STD_MB << 6;
     LIM.rlim_max = STD_MB << 6;
@@ -339,9 +307,9 @@ void run_solution(int &lang, char *infile, char *work_dir, int &time_lmt, int &u
     LIM.rlim_cur = STD_MB *mem_lmt/2*3;
     LIM.rlim_max = STD_MB *mem_lmt*2;
     if(lang != LangJava){
-       setrlimit(RLIMIT_AS, &LIM);
+        setrlimit(RLIMIT_AS, &LIM);
     }
-
+    
     // trace me
     ptrace(PTRACE_TRACEME, 0, NULL, NULL);
     
@@ -350,43 +318,37 @@ void run_solution(int &lang, char *infile, char *work_dir, int &time_lmt, int &u
     }else if(lang == LangJava){
         execl("/usr/bin/java", "/usr/bin/java", "-Xms128M", "-Xms512M",  "-Djava.security.manager", "-Djava.security.policy=./java.policy", "-DONLINE_JUDGE=true", "Main", (char *)NULL );
     }
-    //sleep(1);
+
     exit(0);
 }
 
-//评判用户solution
-void judge_solution(int & JudgeFlag, int & usedtime, int time_lmt,
-                    char * infile, char * outfile, char * userfile,
-                    int lang, char * work_dir, int & topmemory, int mem_lmt){
-    //usedtime-=1000;
-    int comp_res;
-    if (usedtime > time_lmt * 1000){
-        JudgeFlag = JudgeTLE;
-		return;
-	}
-    if(topmemory > mem_lmt * STD_MB){
-		JudgeFlag = JudgeMLE; //issues79
-		return;
-	}
-	// compare
-	JudgeFlag = compare(outfile, userfile);
-	if (JudgeFlag == JudgeWA && DEBUG){
-			printf("fail test %s\n", infile);
-	}
+//评判用户 solution 的结果
+void judge_solution(
+    int &judge_flag, int usedtime, int topmemory, char *outfile, char *userfile){
 
-	//jvm popup messages, if don't consider them will get miss-WrongAnswer
-    // if (lang == LangJava && JudgeFlag != JudgeAC){
-    //     comp_res = fix_java_mis_judge(work_dir, JudgeFlag, topmemory, mem_lmt);
-    // }
+    if (usedtime > time_lmt * 1000){
+        judge_flag = JudgeTLE;
+        return;
+    }
+    
+    if(topmemory > mem_lmt * STD_MB){
+        judge_flag = JudgeMLE;
+        return;
+    }
+    
+    // compare 标准输出和用户输出
+    judge_flag = compare(outfile, userfile);
+    
 }
 
 int get_page_fault_mem(struct rusage & ruse, pid_t & pidApp){
     //java use pagefault
-    int m_vmpeak, m_vmdata, m_minflt;
+    int m_minflt;
     m_minflt = ruse.ru_minflt * getpagesize();
-    if (0 && DEBUG){
-        m_vmpeak = get_proc_status(pidApp, "VmPeak:");
-        m_vmdata = get_proc_status(pidApp, "VmData:");
+    
+    if (DEBUG){
+        int m_vmpeak = get_proc_status(pidApp, "VmPeak:");
+        int m_vmdata = get_proc_status(pidApp, "VmData:");
         printf("VmPeak:%d KB VmData:%d KB minflt:%d KB\n", m_vmpeak, m_vmdata,
                m_minflt >> 10);
     }
@@ -401,16 +363,15 @@ void print_runtimeerror(char * err){
 }
 
 //观察用户程序运行
-void watch_solution(pid_t pidApp, char *infile, int &JudgeFlag,
-                    char *userfile, char *outfile, int lang,
-                    int &topmemory, int mem_lmt, int &usedtime, int time_lmt, char *work_dir){
+void watch_solution(
+        pid_t pidApp, char *userfile, char *outfile, int &judge_flag, int &topmemory, int &usedtime){
     // parent
     int tempmemory;
-
+    
     if (DEBUG){
-        printf("pid=%d judging %s\n", pidApp, infile);
+        printf("pid=%d judging\n", pidApp);
     }
-
+    
     int status, sig, exitcode;
     struct user_regs_struct reg;
     struct rusage ruse;
@@ -418,29 +379,32 @@ void watch_solution(pid_t pidApp, char *infile, int &JudgeFlag,
     while (1){
         // check the usage
         wait4(pidApp, &status, 0, &ruse);
-
-		//jvm gc ask VM before need,so used kernel page fault times and page size
+        
+        //jvm gc ask VM before need,so used kernel page fault times and page size
         if (lang == LangJava){
-          tempmemory = get_page_fault_mem(ruse, pidApp);
+            tempmemory = get_page_fault_mem(ruse, pidApp);
         }else{    //other use VmPeak
             tempmemory = get_proc_status(pidApp, "VmPeak:") << 10;
         }
+        
         if (tempmemory > topmemory){
             topmemory = tempmemory;
         }
+        
         if (topmemory > mem_lmt * STD_MB){
             if (DEBUG){
                 printf("out of memory %d\n", topmemory);
-			}
-			JudgeFlag = JudgeMLE;
+            }
+            
+            judge_flag = JudgeMLE;
             ptrace(PTRACE_KILL, pidApp, NULL, NULL);
             break;
         }
-
+        
         int tmptime = usedtime + (ruse.ru_utime.tv_sec * 1000 + ruse.ru_utime.tv_usec / 1000);
         tmptime += (ruse.ru_stime.tv_sec * 1000 + ruse.ru_stime.tv_usec / 1000);
         if(tmptime >= time_lmt*1000){
-            JudgeFlag = JudgeTLE;
+            judge_flag = JudgeTLE;
             ptrace(PTRACE_KILL, pidApp, NULL, NULL);
             break;
         }
@@ -448,18 +412,19 @@ void watch_solution(pid_t pidApp, char *infile, int &JudgeFlag,
         if (WIFEXITED(status)){
             break;
         }
+        
         if (get_file_size("error.out")){
-            JudgeFlag = JudgeRE;
+            judge_flag = JudgeRE;
             ptrace(PTRACE_KILL, pidApp, NULL, NULL);
             break;
         }
-
+        
         if (get_file_size(userfile) > get_file_size(outfile) * 2+1024){
-            JudgeFlag = JudgeOLE;
+            judge_flag = JudgeOLE;
             ptrace(PTRACE_KILL, pidApp, NULL, NULL);
             break;
         }
-
+        
         exitcode = WEXITSTATUS(status);
         /*exitcode == 5 waiting for next CPU allocation
          *  */
@@ -472,65 +437,61 @@ void watch_solution(pid_t pidApp, char *infile, int &JudgeFlag,
             }
             //psignal(exitcode, NULL);
             switch (exitcode){
-				case SIGCHLD:
-                case SIGALRM:
-                    alarm(0);
-                case SIGKILL:
-                case SIGXCPU:
-                    JudgeFlag = JudgeTLE;
-                    break;
-                case SIGXFSZ:
-                    JudgeFlag = JudgeOLE;
-                    break;
-                default:
-                    JudgeFlag = JudgeRE;
-			}
-            print_runtimeerror(strsignal(exitcode));
-            ptrace(PTRACE_KILL, pidApp, NULL, NULL);
-            break;
-        }
-        if (WIFSIGNALED(status)){
-            /*  WIFSIGNALED: if the process is terminated by signal
-             *
-             *  psignal(int sig, char *s)，like perror(char *s)，print out s, with error msg from system of sig
-            * sig = 5 means Trace/breakpoint trap
-            * sig = 11 means Segmentation fault
-            * sig = 25 means File size limit exceeded
-            */
-            sig = WTERMSIG(status);
-
-            if (DEBUG){
-                printf("WTERMSIG=%d\n", sig);
-                psignal(sig, NULL);
-            }
-			switch (sig){
                 case SIGCHLD:
                 case SIGALRM:
                     alarm(0);
                 case SIGKILL:
                 case SIGXCPU:
-                    JudgeFlag = JudgeTLE;
+                    judge_flag = JudgeTLE;
                     break;
                 case SIGXFSZ:
-                    JudgeFlag = JudgeOLE;
+                    judge_flag = JudgeOLE;
                     break;
                 default:
-                    JudgeFlag = JudgeRE;
-			}
+                    judge_flag = JudgeRE;
+            }
+            print_runtimeerror(strsignal(exitcode));
+            ptrace(PTRACE_KILL, pidApp, NULL, NULL);
+            break;
+        }
+        
+        if (WIFSIGNALED(status)){
+            /*  WIFSIGNALED: if the process is terminated by signal
+             *
+             *  psignal(int sig, char *s)，like perror(char *s)，print out s, with error msg from system of sig
+             * sig = 5 means Trace/breakpoint trap
+             * sig = 11 means Segmentation fault
+             * sig = 25 means File size limit exceeded
+             */
+            sig = WTERMSIG(status);
+            
+            if (DEBUG){
+                printf("WTERMSIG=%d\n", sig);
+                psignal(sig, NULL);
+            }
+            switch (sig){
+                case SIGCHLD:
+                case SIGALRM:
+                    alarm(0);
+                case SIGKILL:
+                case SIGXCPU:
+                    judge_flag = JudgeTLE;
+                    break;
+                case SIGXFSZ:
+                    judge_flag = JudgeOLE;
+                    break;
+                default:
+                    judge_flag = JudgeRE;
+            }
             print_runtimeerror(strsignal(sig));
             break;
         }
-        /*     comment from http://www.felix021.com/blog/read.php?1662
-
-        WIFSTOPPED: return true if the process is paused or stopped while ptrace is watching on it
-        WSTOPSIG: get the signal if it was stopped by signal
-         */
-
+        
         // check the system calls
         ptrace(PTRACE_GETREGS, pidApp, NULL, &reg);
-
+        
         if (!record_call&&call_counter[reg.REG_SYSCALL] == 0) {   //do not limit JVM syscall for using different JVM
-            JudgeFlag = JudgeRE;
+            judge_flag = JudgeRE;
             char error[BUFFER_SIZE];
             sprintf(error,"[ERROR] A Not allowed system call! callid:%llu\n",reg.REG_SYSCALL);
             write_log(error);
@@ -544,38 +505,61 @@ void watch_solution(pid_t pidApp, char *infile, int &JudgeFlag,
             }
         }
         sub = 1 - sub;
-
+        
         ptrace(PTRACE_SYSCALL, pidApp, NULL, NULL);
     }
+    
     usedtime += (ruse.ru_utime.tv_sec * 1000 + ruse.ru_utime.tv_usec / 1000);
     usedtime += (ruse.ru_stime.tv_sec * 1000 + ruse.ru_stime.tv_usec / 1000);
 }
 
 //准备测试文件
-void prepare_files(char * filename, int namelen, char * infile, char * work_dir, char * outfile, char * userfile){
+int prepare_files(char * filename, char * infile, char * outfile, char * userfile){
+    int l = strlen(filename);
+    
+    // 检查是否为 .in 文件
+    if (l <= 3 || strcmp(filename + l - 3, ".in") != 0){
+        return 0;
+    }
+    
+    // 得到 .in 文件前缀
     char  fname[BUFFER_SIZE];
-    strncpy(fname, filename, namelen);
-    fname[namelen] = 0;
+    strncpy(fname, filename,  l - 3);
+    fname[l-3] = 0;
+    
     sprintf(infile, "%s.in", fname);
-
     sprintf(outfile, "%s.out", fname);
     sprintf(userfile, "user.out");
 }
 
 //参数初始化
-void init_parameters(int argc, char **argv, char *problemId, int &lang, int &time_lmt, int &mem_lmt, char *path){
-    if (argc < 3){
-        fprintf(stderr, "Usage:%s [ProblemID] [language] [time limit] [memory limit] [RunPath]\n", argv[0]);
+void init_parameters(int argc, char **argv){
+    if (argc < 4){
+        fprintf(stderr, "Usage:%s [language] [time limit] [memory limit] [run path]\n", argv[0]);
         exit(1);
     }
-
-    problemId = argv[1];
-    lang = atoi(argv[2]);
-    time_lmt = atoi(argv[3]);
-    mem_lmt = atoi(argv[4])*1024/STD_MB*8;
-    sprintf(path,"%s", argv[5]);
-
-    sprintf(oj_home, "%s", getenv("OJ_HOME"));
+    
+    lang = atoi(argv[1]);
+    time_lmt = atoi(argv[2]);
+    mem_lmt = atoi(argv[3])*1024/STD_MB*8;
+    sprintf(work_dir,"%s", argv[4]);
+    
+    //java is lucky
+    if (lang == LangJava){
+        // the limit for java
+        time_lmt = time_lmt * 2;
+        mem_lmt = mem_lmt * 2;
+        execute_cmd( "cp /etc/java-7-openjdk/security/java.policy %s/java.policy", work_dir);
+    }
+    
+    //never bigger than judged set value;
+    if (time_lmt > 30 || time_lmt < 1){
+        time_lmt = 30;
+    }
+    
+    if (mem_lmt > 1024 || mem_lmt < 1){
+        mem_lmt = 1024;
+    }
 }
 
 //输出用户程序的所用系统调用及调用次数
@@ -588,7 +572,7 @@ void print_call_array(){
         }
     }
     write_log("0};\n");
-
+    
     write_log("int LANG_%sC[256]={",LANG_NAME);
     for (i = 0; i<call_array_size; i++){
         if(call_counter[i]){
@@ -600,100 +584,88 @@ void print_call_array(){
 
 //judger 程序入口
 int main(int argc, char** argv){
-
-    char work_dir[BUFFER_SIZE],*problemId;
-    int time_lmt = 5, mem_lmt = 128, lang;//单位是second and MB
-
-    init_parameters(argc, argv, problemId, lang, time_lmt, mem_lmt,work_dir);
-
-    //chdir(work_dir);
-
-    if(chdir(work_dir) == -1){
-        printf("change work_dir failed\n");
-    }
-    //java is lucky
-    if (lang == LangJava){
-        // the limit for java
-        time_lmt = time_lmt * 2;
-        mem_lmt = mem_lmt * 2;
-         execute_cmd( "cp /etc/java-7-openjdk/security/java.policy %s/java.policy", oj_home, work_dir);
-    }
-
-    //never bigger than judged set value;
-    if (time_lmt > 30 || time_lmt < 1){
-        time_lmt = 30;
-    }
-    if (mem_lmt > 1024 || mem_lmt < 1){
-        mem_lmt = 1024;
-    }
-
+    
+    init_parameters(argc, argv);
+    
     if (DEBUG){
         printf("time: %d mem: %d\n", time_lmt, mem_lmt);
     }
-
+    
+    // cd work_dir
+    if(chdir(work_dir) == -1){
+        printf("change work_dir failed\n");
+    }
+    
+    
     // begin run
     char fullpath[BUFFER_SIZE];
-    char infile[BUFFER_SIZE];
-    char outfile[BUFFER_SIZE];
-    char userfile[BUFFER_SIZE];
-
     getcwd(fullpath, BUFFER_SIZE);// the fullpath of data dir
-
+    
     // open DIRs
     DIR *dp;
     dirent *dirp;
-
+    
     if ((dp = opendir(fullpath)) == NULL){
         write_log("No such dir:%s!\n", fullpath);
         exit(-1);
     }
-
-    write_log("mem_limt %d",mem_lmt);
-    int JudgeFlag = JudgeAC;
-    int namelen;
+    
+    int judge_flag = JudgeAC;
     int usedtime = 0, topmemory = 0;
     int count = 0;
     
     // read files and run
-    for (; ( JudgeFlag == JudgeAC )&& (dirp = readdir(dp)) != NULL;){
-        namelen = isInFile(dirp->d_name); // check whether the file is *.in or not
-        if (namelen == 0){
+    for (; ( judge_flag == JudgeAC )&& (dirp = readdir(dp)) != NULL;){
+        
+        char infile[BUFFER_SIZE];
+        char outfile[BUFFER_SIZE];
+        char userfile[BUFFER_SIZE];
+        
+        if (prepare_files(dirp->d_name, infile, outfile, userfile) == 0){
             continue;
         }
-
-        prepare_files(dirp->d_name, namelen, infile, work_dir, outfile, userfile);
+        
         init_syscalls_limits(lang);
-
+        
         if(DEBUG){
             printf("%s\n",infile);
         }
+        
         pid_t pidApp = fork();
         if (pidApp == 0){
-            run_solution(lang, infile,work_dir, time_lmt, usedtime, mem_lmt);
-			exit(0);
+            run_solution(infile, usedtime);
+            exit(0);
         }else{
-			watch_solution(pidApp, infile, JudgeFlag, userfile, outfile, lang, topmemory, mem_lmt, usedtime, time_lmt, work_dir);
-
-			if(JudgeFlag == JudgeAC){
-				judge_solution(JudgeFlag, usedtime, time_lmt, infile, outfile, userfile, lang, work_dir, topmemory, mem_lmt);
-			}
+            watch_solution(pidApp, userfile, outfile, judge_flag, topmemory, usedtime);
+            
+            if(judge_flag == JudgeAC){
+                judge_solution(judge_flag, usedtime, topmemory, outfile, userfile);
+            }
             count += 1;
         }
     }
 
     if(!count){
-        JudgeFlag = JudgeNA;
+        judge_flag = JudgeNA;
     }
-    if(JudgeFlag == JudgeTLE){
-        usedtime = time_lmt*1000;
+    
+    if(judge_flag == JudgeTLE){
+        usedtime = time_lmt*1000; // s to ms
     }
-
-    write_log("result = %d usedtime = %d topmemory = %d", JudgeFlag, usedtime, topmemory);
-
+    
+    write_log("result = %d usedtime = %d topmemory = %d", judge_flag, usedtime, topmemory);
+    
     if(record_call){
         print_call_array();
     }
-
-    printf("%d %d %d", JudgeFlag, usedtime, topmemory);
-    exit(JudgeFlag);
+    
+    printf("%d %d %d", judge_flag, usedtime, topmemory);
+    
+    if (judge_flag == JudgeAC) {
+        exit(0);
+    } else if (judge_flag == JudgeNA) {
+        exit(3);
+    }
+    
+    exit(judge_flag);
 }
