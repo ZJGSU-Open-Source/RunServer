@@ -10,6 +10,9 @@ RUN \
   rm -rf /var/lib/apt/lists/*
 
 
+ADD . $GOPATH/src/RunServer
+RUN go get -t RunServer
+
 # Build OJ
 RUN \
   cd $GOPATH/src/RunServer && \
