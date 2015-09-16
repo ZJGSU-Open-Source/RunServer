@@ -593,7 +593,8 @@ int main(int argc, char** argv){
     
     // cd work_dir
     if(chdir(work_dir) == -1){
-        printf("change work_dir failed\n");
+        write_log("change work_dir %s failed\n", work_dir);
+        exit(JudgeNA);
     }
     
     
@@ -607,7 +608,7 @@ int main(int argc, char** argv){
     
     if ((dp = opendir(fullpath)) == NULL){
         write_log("No such dir:%s!\n", fullpath);
-        exit(-1);
+        exit(JudgeNA);
     }
     
     int judge_flag = JudgeAC;
