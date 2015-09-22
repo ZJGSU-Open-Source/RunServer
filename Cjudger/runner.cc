@@ -278,6 +278,10 @@ void run_solution(char *infile, int &usedtime){
     if(DEBUG){
         printf("%s\n", infile);
     }
+
+    // trace me
+    ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+
     // run me
     if (lang != LangJava){
         chroot(work_dir);
@@ -318,10 +322,7 @@ void run_solution(char *infile, int &usedtime){
     if(lang != LangJava){
         setrlimit(RLIMIT_AS, &LIM);
     }
-    
-    // trace me
-    ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-    
+        
     if(lang == LangC || lang ==LangCC){
         execl("./Main", "./Main", (char *)NULL);
     }else if(lang == LangJava){
@@ -387,7 +388,7 @@ void watch_solution(
     int sub = 0;
     while (1){
         // check the usage
-        wait4(pidApp, &status, 0, &ruse);
+        wait4(-1, &status, 0, &ruse);
         
         //jvm gc ask VM before need,so used kernel page fault times and page size
         if (lang == LangJava){
@@ -397,6 +398,9 @@ void watch_solution(
             write_log("VmPeak %d, VmData %d", 
                 get_proc_status(pidApp,"VmPeak:"),
                 get_proc_status(pidApp,"VmData:"));
+            if(tempmemory == 0) {
+                tempmemory = get_page_fault_mem(ruse, pidApp);
+            }
         }
         
         if (tempmemory > topmemory){
