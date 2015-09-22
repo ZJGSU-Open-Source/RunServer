@@ -43,6 +43,7 @@
 #include <sys/signal.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 #include <assert.h>
 #include "okcalls.h"
 #include "config.h"
@@ -246,7 +247,8 @@ int get_proc_status(int pid, const char * mark){
     pf = fopen(fn, "r");
 
     if(pf == NULL) {
-        write_log("Open %s error", fn);
+        char * mesg = strerror(errno);
+        write_log("Open %s error: %s", fn, mesg);
         return 0;
     }
 
