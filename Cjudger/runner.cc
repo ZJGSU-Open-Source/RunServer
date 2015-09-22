@@ -76,6 +76,7 @@ void write_log(const char *fmt, ...){
     FILE *fp = fopen(buffer, "a+");
     if (fp == NULL){
         fprintf(stderr, "openfile error!\n");
+        return
     }
     
     va_start(ap, fmt);
@@ -243,6 +244,12 @@ int get_proc_status(int pid, const char * mark){
     sprintf(fn, "/proc/%d/status", pid);
     
     pf = fopen(fn, "r");
+
+    if(pf == NULL) {
+        write_log("Open %s error", fn);
+        return 0;
+    }
+
     int m = strlen(mark);
     while (pf && fgets(buf, BUFFER_SIZE - 1, pf)){
         buf[strlen(buf) - 1] = 0;
@@ -385,6 +392,9 @@ void watch_solution(
             tempmemory = get_page_fault_mem(ruse, pidApp);
         }else{    //other use VmPeak
             tempmemory = get_proc_status(pidApp, "VmPeak:") << 10;
+            write_log("VmPeak %d, VmData %d", 
+                get_proc_status(pidApp,"VmPeak:"),
+                get_proc_status(pidApp,"VmData:"));
         }
         
         if (tempmemory > topmemory){
@@ -587,9 +597,7 @@ int main(int argc, char** argv){
     
     init_parameters(argc, argv);
     
-    if (DEBUG){
-        printf("time: %d mem: %d\n", time_lmt, mem_lmt);
-    }
+    write_log("time: %d mem: %d\n", time_lmt, mem_lmt);
     
     // cd work_dir
     if(chdir(work_dir) == -1){
