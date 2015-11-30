@@ -99,6 +99,10 @@ func (this *solution) UpdateSim() {
 }
 
 func (this *solution) UpdateRecord() {
+	if this.Module != config.ModuleP {
+		return
+	}
+
 	solutionModel := model.SolutionModel{}
 	qry := make(map[string]string)
 	qry["module"] = strconv.Itoa(config.ModuleP)
@@ -122,7 +126,7 @@ func (this *solution) UpdateRecord() {
 	delete(qry, "module")
 	submit, _ = solutionModel.Count(qry)
 
-	solvelist, err := solutionModel.Achieve(this.Uid)
+	solvelist, err := solutionModel.Achieve(this.Uid, config.ModuleP, config.ModuleP)
 	if err != nil {
 		logger.Println(err)
 	}
