@@ -158,7 +158,6 @@ func (this *solution) get_sim(Sid, Language int) (sim, Sim_s_id int) {
 	solutionModel := model.SolutionModel{}
 	list, err := solutionModel.List(qry)
 	workdir := runPath + "/" + strconv.Itoa(this.Sid)
-	log.Println(workdir)
 
 	sim_test_dir := workdir + "/sim_test"
 
@@ -203,18 +202,17 @@ func (this *solution) get_sim(Sid, Language int) (sim, Sim_s_id int) {
 	if err = cmd.Run(); err != nil {
 		return
 	}
-	defer os.Remove("./sim")
+	defer os.Remove("./simfile")
 
-	if _, err := os.Stat("./sim"); err == nil {
+	if _, err := os.Stat("./simfile"); err == nil {
 
-		simfile, err := os.Open("./sim")
+		simfile, err := os.Open("./simfile")
 
 		if err != nil {
 			logger.Println("sim file open error")
 			return
 		}
 		defer simfile.Close()
-
 		fmt.Fscanf(simfile, "%d %d", &sim, &Sim_s_id)
 	}
 	return sim, Sim_s_id
