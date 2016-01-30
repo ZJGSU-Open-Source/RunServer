@@ -5,7 +5,6 @@ import (
 
 	"RunServer/config"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
