@@ -43,6 +43,7 @@
 #include <sys/signal.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 #include <assert.h>
 #include "okcalls.h"
 #include "config.h"
@@ -76,6 +77,7 @@ void write_log(const char *fmt, ...){
     FILE *fp = fopen(buffer, "a+");
     if (fp == NULL){
         fprintf(stderr, "openfile error!\n");
+        return;
     }
     
     va_start(ap, fmt);
@@ -243,6 +245,13 @@ int get_proc_status(int pid, const char * mark){
     sprintf(fn, "/proc/%d/status", pid);
     
     pf = fopen(fn, "r");
+
+    if(pf == NULL) {
+        char * mesg = strerror(errno);
+        write_log("Open %s error: %s", fn, mesg);
+        return 0;
+    }
+
     int m = strlen(mark);
     while (pf && fgets(buf, BUFFER_SIZE - 1, pf)){
         buf[strlen(buf) - 1] = 0;
@@ -269,6 +278,10 @@ void run_solution(char *infile, int &usedtime){
     if(DEBUG){
         printf("%s\n", infile);
     }
+
+    // trace me
+    ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+
     // run me
     if (lang != LangJava){
         chroot(work_dir);
@@ -309,10 +322,7 @@ void run_solution(char *infile, int &usedtime){
     if(lang != LangJava){
         setrlimit(RLIMIT_AS, &LIM);
     }
-    
-    // trace me
-    ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-    
+        
     if(lang == LangC || lang ==LangCC){
         execl("./Main", "./Main", (char *)NULL);
     }else if(lang == LangJava){
@@ -378,13 +388,19 @@ void watch_solution(
     int sub = 0;
     while (1){
         // check the usage
-        wait4(pidApp, &status, 0, &ruse);
+        wait4(-1, &status, 0, &ruse);
         
         //jvm gc ask VM before need,so used kernel page fault times and page size
         if (lang == LangJava){
             tempmemory = get_page_fault_mem(ruse, pidApp);
         }else{    //other use VmPeak
             tempmemory = get_proc_status(pidApp, "VmPeak:") << 10;
+            write_log("VmPeak %d, VmData %d", 
+                get_proc_status(pidApp,"VmPeak:"),
+                get_proc_status(pidApp,"VmData:"));
+            if(tempmemory == 0) {
+                tempmemory = get_page_fault_mem(ruse, pidApp);
+            }
         }
         
         if (tempmemory > topmemory){
@@ -587,9 +603,7 @@ int main(int argc, char** argv){
     
     init_parameters(argc, argv);
     
-    if (DEBUG){
-        printf("time: %d mem: %d\n", time_lmt, mem_lmt);
-    }
+    write_log("time: %d mem: %d\n", time_lmt, mem_lmt);
     
     // cd work_dir
     if(chdir(work_dir) == -1){
