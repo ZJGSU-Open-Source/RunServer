@@ -525,7 +525,7 @@ void watch_solution(
         ptrace(PTRACE_SYSCALL, pidApp, NULL, NULL);
     }
     
-    int tmptime += (ruse.ru_utime.tv_sec * 1000 + ruse.ru_utime.tv_usec / 1000);
+    int tmptime = (ruse.ru_utime.tv_sec * 1000 + ruse.ru_utime.tv_usec / 1000);
     tmptime += (ruse.ru_stime.tv_sec * 1000 + ruse.ru_stime.tv_usec / 1000);
     if ( usedtime < tmptime) {
         usedtime = tmptime;
