@@ -417,7 +417,7 @@ void watch_solution(
             break;
         }
         
-        int tmptime = usedtime + (ruse.ru_utime.tv_sec * 1000 + ruse.ru_utime.tv_usec / 1000);
+        int tmptime =  (ruse.ru_utime.tv_sec * 1000 + ruse.ru_utime.tv_usec / 1000);
         tmptime += (ruse.ru_stime.tv_sec * 1000 + ruse.ru_stime.tv_usec / 1000);
         if(tmptime >= time_lmt*1000){
             judge_flag = JudgeTLE;
@@ -525,8 +525,11 @@ void watch_solution(
         ptrace(PTRACE_SYSCALL, pidApp, NULL, NULL);
     }
     
-    usedtime += (ruse.ru_utime.tv_sec * 1000 + ruse.ru_utime.tv_usec / 1000);
-    usedtime += (ruse.ru_stime.tv_sec * 1000 + ruse.ru_stime.tv_usec / 1000);
+    int tmptime += (ruse.ru_utime.tv_sec * 1000 + ruse.ru_utime.tv_usec / 1000);
+    tmptime += (ruse.ru_stime.tv_sec * 1000 + ruse.ru_stime.tv_usec / 1000);
+    if ( usedtime < tmptime) {
+        usedtime = tmptime;
+    }
 }
 
 //准备测试文件
